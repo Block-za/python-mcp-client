@@ -71,7 +71,7 @@ http://localhost:5000
 
 ### Connecting to the Server
 
-1. The application will automatically try to connect to the MCP server at `../build/index.js`
+1. The application will automatically try to connect to the MCP server at `../blockza-directory-mcp-server/build/index.js`
 2. If the path is different, update the server path in the connection panel
 3. Click "Connect" to establish the connection
 4. Once connected, you'll see the available tools listed

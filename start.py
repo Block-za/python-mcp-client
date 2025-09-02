@@ -63,11 +63,11 @@ def check_env_file():
 
 def check_mcp_server():
     """Check if MCP server exists"""
-    server_path = Path('../build/index.js')
+    server_path = Path('../blockza-directory-mcp-server/build/index.js')
     if not server_path.exists():
-        print("❌ MCP server not found at ../build/index.js")
+        print("❌ MCP server not found at ../blockza-directory-mcp-server/build/index.js")
         print("Please build the MCP server first:")
-        print("cd .. && npm run build")
+        print("cd ../blockza-directory-mcp-server && npm run build")
         return False
     
     print("✅ MCP server found")

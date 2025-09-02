@@ -43,8 +43,8 @@ Open your browser and go to: **http://localhost:5000**
 ## 🔧 Troubleshooting
 
 **If you get "Connection Failed":**
-- Make sure the MCP server is built: `cd .. && npm run build`
-- Check the server path is correct (default: `../build/index.js`)
+- Make sure the MCP server is built: `cd ../blockza-directory-mcp-server && npm run build`
+- Check the server path is correct (default: `../blockza-directory-mcp-server/build/index.js`)
 
 **If you get "OpenAI API Error":**
 - Verify your API key in the `.env` file

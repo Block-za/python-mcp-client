@@ -31,7 +31,7 @@ async def debug_query():
     # Connect to server
     print("🔄 Connecting to MCP server...")
     try:
-        tools = await client.connect_to_server("../build/index.js")
+        tools = await client.connect_to_server("../blockza-directory-mcp-server/build/index.js")
         print(f"✅ Connected with {len(tools)} tools")
         for tool in tools:
             print(f"  - {tool['name']}: {tool['description']}")

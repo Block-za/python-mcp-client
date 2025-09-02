@@ -9,11 +9,11 @@ import os
 
 def test_mcp_server():
     """Test if the MCP server is running"""
-    server_path = "../build/index.js"
+    server_path = "../blockza-directory-mcp-server/build/index.js"
     
     if not os.path.exists(server_path):
         print(f"❌ MCP server not found at {server_path}")
-        print("Please build the server first: cd .. && npm run build")
+        print("Please build the server first: cd ../blockza-directory-mcp-server && npm run build")
         return False
     
     print(f"✅ MCP server found at {server_path}")
