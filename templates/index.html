@@ -339,86 +339,345 @@
         .company-cards-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 15px 0;
+            gap: 12px;
+            margin: 10px 0;
         }
 
-        .company-card {
+        /* Event Cards Styles */
+        .event-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .event-card {
             background: white;
             border-radius: 12px;
             border: 1px solid #e9ecef;
             overflow: hidden;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .event-card-banner {
+            height: 120px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-card-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .event-card-header {
+            padding: 15px 18px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .event-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.3;
+            margin-bottom: 5px;
+        }
+
+        .event-card-company {
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .event-card-category {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+        }
+
+        .event-card-body {
+            padding: 15px 18px;
+        }
+
+        .event-card-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .event-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .event-detail-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .event-card-footer {
+            padding: 12px 18px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-card-link {
+            color: #28a745;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            padding: 6px 12px;
+            border: 1px solid #28a745;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .event-card-link:hover {
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+        }
+
+        .event-date {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        /* Team Member Cards Styles */
+        .team-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin: 10px 0;
+        }
+
+        .team-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .team-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .team-card-header {
+            padding: 15px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .team-card-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            flex-shrink: 0;
+        }
+
+        .team-card-info {
+            flex: 1;
+        }
+
+        .team-card-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.3;
+            margin-bottom: 3px;
+        }
+
+        .team-card-title {
+            color: #6c757d;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .team-card-body {
+            padding: 12px 18px;
+        }
+
+        .team-card-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .team-stat {
+            text-align: center;
+        }
+
+        .team-stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .team-stat-label {
+            font-size: 11px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .team-card-footer {
+            padding: 10px 18px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .team-card-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 12px;
+            padding: 5px 10px;
+            border: 1px solid #667eea;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .team-card-link:hover {
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+        }
+
+        .team-status {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .team-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .team-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .company-card {
+            background: white;
+            max-height: 450px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .company-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .company-card-banner {
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .company-card-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .company-card-header {
-            padding: 20px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
             border-bottom: 1px solid #f1f3f4;
         }
 
         .company-card-logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
             object-fit: cover;
-            margin-bottom: 12px;
             background: #f8f9fa;
             border: 1px solid #e9ecef;
+            flex-shrink: 0;
         }
 
         .company-card-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 8px;
             line-height: 1.3;
+            flex: 1;
         }
 
         .company-card-category {
             display: inline-block;
             background: #667eea;
             color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin-left: 8px;
         }
 
         .company-card-body {
-            padding: 20px;
+            padding: 12px 16px;
+            height: fit-content;
         }
 
         .company-card-description {
             color: #6c757d;
-            line-height: 1.5;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        .company-card-stats {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .company-stat {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            color: #6c757d;
+            line-height: 1.4;
             font-size: 13px;
+            margin-bottom: 8px;
         }
 
         .company-card-footer {
-            padding: 15px 20px;
+            padding: 10px 16px;
             background: #f8f9fa;
             border-top: 1px solid #e9ecef;
             display: flex;
@@ -430,8 +689,8 @@
             color: #667eea;
             text-decoration: none;
             font-weight: 500;
-            font-size: 14px;
-            padding: 8px 16px;
+            font-size: 13px;
+            padding: 6px 12px;
             border: 1px solid #667eea;
             border-radius: 6px;
             transition: all 0.3s ease;
@@ -446,10 +705,10 @@
         .verification-badge {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
+            gap: 3px;
+            padding: 3px 8px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
         }
 
@@ -469,19 +728,80 @@
         }
 
         @media (max-width: 768px) {
-            .company-cards-container {
+            .company-cards-container,
+            .event-cards-container,
+            .team-cards-container {
                 grid-template-columns: 1fr;
-                gap: 15px;
-                margin: 10px 0;
+                gap: 10px;
+                margin: 6px 0;
             }
 
-            .company-card-header,
+            .company-card-banner {
+                height: 80px;
+            }
+
+            .company-card-header {
+                padding: 10px 12px;
+                gap: 10px;
+            }
+
+            .company-card-logo {
+                width: 36px;
+                height: 36px;
+            }
+
+            .company-card-title {
+                font-size: 15px;
+            }
+
             .company-card-body {
-                padding: 15px;
+                padding: 10px 12px;
             }
 
             .company-card-footer {
+                padding: 8px 12px;
+            }
+
+            .event-card-banner {
+                height: 100px;
+            }
+
+            .event-card-header {
                 padding: 12px 15px;
+            }
+
+            .event-card-title {
+                font-size: 16px;
+            }
+
+            .event-card-body {
+                padding: 12px 15px;
+            }
+
+            .event-card-footer {
+                padding: 10px 15px;
+            }
+
+            .team-card-header {
+                padding: 12px 15px;
+                gap: 10px;
+            }
+
+            .team-card-avatar {
+                width: 45px;
+                height: 45px;
+            }
+
+            .team-card-name {
+                font-size: 15px;
+            }
+
+            .team-card-body {
+                padding: 10px 15px;
+            }
+
+            .team-card-footer {
+                padding: 8px 15px;
             }
 
             .header {
@@ -607,9 +927,9 @@
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
             
-            // Check if content contains company data and render accordingly
-            if (!isUser && tryRenderCompanyCards(content, messageContent)) {
-                // Company cards were rendered
+            // Check if content contains structured data and render accordingly
+            if (!isUser && tryRenderStructuredData(content, messageContent)) {
+                // Structured data was rendered
             } else {
                 // Regular text content - preserve line breaks and formatting
                 messageContent.innerHTML = content.replace(/\n/g, '<br>');
@@ -622,31 +942,44 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function tryRenderCompanyCards(content, messageContent) {
+        function tryRenderStructuredData(content, messageContent) {
             try {
-                // Try to detect companies in the response
+                // Check for companies data
                 const companies = extractCompaniesFromResponse(content);
                 if (companies && companies.length > 0) {
                     console.log('Found companies:', companies.length, companies.map(c => c.name));
                     renderCompanyCards(companies, messageContent, content);
                     return true;
-                } else {
-                    console.log('No companies detected in response');
-                    console.log('Content preview:', content.substring(0, 200));
-                    
-                    // Try to manually trigger formatted text extraction
-                    if (content.includes('**') && content.includes('Category') && content.includes('Description')) {
-                        console.log('Attempting manual formatted text extraction...');
-                        const manualCompanies = extractFromFormattedText(content);
-                        if (manualCompanies && manualCompanies.length > 0) {
-                            console.log('Manual extraction found companies:', manualCompanies.length);
-                            renderCompanyCards(manualCompanies, messageContent, content);
-                            return true;
-                        }
+                }
+                
+                // Check for events data
+                const events = extractEventsFromResponse(content);
+                if (events && events.length > 0) {
+                    console.log('Found events:', events.length, events.map(e => e.title));
+                    renderEventCards(events, messageContent, content);
+                    return true;
+                }
+                
+                // Check for team data
+                const teamData = extractTeamFromResponse(content);
+                if (teamData && teamData.team_members && teamData.team_members.length > 0) {
+                    console.log('Found team members:', teamData.team_members.length, teamData.company);
+                    renderTeamCards(teamData, messageContent, content);
+                    return true;
+                }
+                
+                // Fallback: Try to manually trigger formatted text extraction for companies
+                if (content.includes('**') && content.includes('Category') && content.includes('Description')) {
+                    console.log('Attempting manual formatted text extraction...');
+                    const manualCompanies = extractFromFormattedText(content);
+                    if (manualCompanies && manualCompanies.length > 0) {
+                        console.log('Manual extraction found companies:', manualCompanies.length);
+                        renderCompanyCards(manualCompanies, messageContent, content);
+                        return true;
                     }
                 }
             } catch (e) {
-                console.log('Error in tryRenderCompanyCards:', e);
+                console.log('Error in tryRenderStructuredData:', e);
             }
             return false;
         }
@@ -776,6 +1109,84 @@
                 console.log('Force triggering formatted text extraction...');
                 return extractFromFormattedText(content);
             }
+
+            return null;
+        }
+
+        function extractEventsFromResponse(content) {
+            // Look for events data patterns
+            
+            // Pattern 1: Special markers from MCP server
+            const markerPattern = /EVENTS_DATA_START\n(.*?)\nEVENTS_DATA_END/s;
+            const markerMatch = content.match(markerPattern);
+            if (markerMatch) {
+                try {
+                    const parsed = JSON.parse(markerMatch[1]);
+                    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title) {
+                        return parsed;
+                    }
+                } catch (e) {
+                    console.log('Error parsing events marker data:', e);
+                }
+            }
+            
+            // Pattern 2: JSON array of events (direct array)
+            try {
+                const parsed = JSON.parse(content);
+                if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title) {
+                    return parsed;
+                }
+                if (parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0 && parsed.data[0].title) {
+                    return parsed.data;
+                }
+                if (parsed.events && Array.isArray(parsed.events) && parsed.events.length > 0 && parsed.events[0].title) {
+                    return parsed.events;
+                }
+                if (parsed.results && Array.isArray(parsed.results) && parsed.results.length > 0 && parsed.results[0].title) {
+                    return parsed.results;
+                }
+            } catch (e) {}
+
+            // Pattern 3: Look for event-like objects in text
+            const eventRegex = /\{[^{}]*"title"\s*:\s*"[^"]*"[^{}]*\}/g;
+            const matches = content.match(eventRegex);
+            if (matches && matches.length > 0) {
+                try {
+                    const events = matches.map(match => JSON.parse(match));
+                    const validEvents = events.filter(event => event.title && event.title.trim() !== '');
+                    if (validEvents.length > 0) {
+                        return validEvents;
+                    }
+                } catch (e) {}
+            }
+
+            return null;
+        }
+
+        function extractTeamFromResponse(content) {
+            // Look for team data patterns
+            
+            // Pattern 1: Special markers from MCP server
+            const markerPattern = /TEAM_DATA_START\n(.*?)\nTEAM_DATA_END/s;
+            const markerMatch = content.match(markerPattern);
+            if (markerMatch) {
+                try {
+                    const parsed = JSON.parse(markerMatch[1]);
+                    if (parsed.company && parsed.team_members && Array.isArray(parsed.team_members)) {
+                        return parsed;
+                    }
+                } catch (e) {
+                    console.log('Error parsing team marker data:', e);
+                }
+            }
+            
+            // Pattern 2: Direct team object
+            try {
+                const parsed = JSON.parse(content);
+                if (parsed.company && parsed.team_members && Array.isArray(parsed.team_members)) {
+                    return parsed;
+                }
+            } catch (e) {}
 
             return null;
         }
@@ -992,6 +1403,213 @@
             messageContent.appendChild(mixedContainer);
         }
 
+        function renderEventCards(events, messageContent, originalContent) {
+            // Create container for mixed content
+            const mixedContainer = document.createElement('div');
+            
+            // Extract any text that's not event data
+            let textContent = originalContent;
+            
+            // Remove event JSON data from text content
+            events.forEach(event => {
+                const eventStr = JSON.stringify(event);
+                textContent = textContent.replace(eventStr, '');
+            });
+            
+            // Remove common intro phrases and clean up
+            textContent = textContent
+                .replace(/^\s*[\[\{].*?[\]\}]\s*$/gm, '') // Remove JSON brackets
+                .replace(/^\s*(Here are|Found|I found|Here's).*?(events?|results?|events in|events from).*?:\s*/gim, '') // Remove intro text
+                .replace(/\s{2,}/g, ' ') // Replace multiple spaces
+                .replace(/^\s+|\s+$/g, '') // Trim whitespace
+                .trim();
+
+            // Add any remaining meaningful text content
+            if (textContent && textContent.length > 20 && !textContent.match(/^[\[\]\{\}\s,]*$/)) {
+                const textDiv = document.createElement('div');
+                textDiv.style.marginBottom = '15px';
+                textDiv.style.padding = '10px';
+                textDiv.style.backgroundColor = '#f8f9fa';
+                textDiv.style.borderRadius = '8px';
+                textDiv.style.borderLeft = '4px solid #28a745';
+                textDiv.textContent = textContent;
+                mixedContainer.appendChild(textDiv);
+            }
+
+            // Create cards container
+            const cardsContainer = document.createElement('div');
+            cardsContainer.className = 'event-cards-container';
+
+            events.forEach(event => {
+                const card = createEventCard(event);
+                cardsContainer.appendChild(card);
+            });
+
+            mixedContainer.appendChild(cardsContainer);
+            messageContent.appendChild(mixedContainer);
+        }
+
+        function renderTeamCards(teamData, messageContent, originalContent) {
+            // Create container for mixed content
+            const mixedContainer = document.createElement('div');
+            
+            // Extract any text that's not team data
+            let textContent = originalContent;
+            
+            // Remove team JSON data from text content
+            const teamStr = JSON.stringify(teamData);
+            textContent = textContent.replace(teamStr, '');
+            
+            // Remove common intro phrases and clean up
+            textContent = textContent
+                .replace(/^\s*[\[\{].*?[\]\}]\s*$/gm, '') // Remove JSON brackets
+                .replace(/^\s*(Here are|Found|I found|Here's).*?(team|members?|team members?).*?:\s*/gim, '') // Remove intro text
+                .replace(/\s{2,}/g, ' ') // Replace multiple spaces
+                .replace(/^\s+|\s+$/g, '') // Trim whitespace
+                .trim();
+
+            // Add any remaining meaningful text content
+            if (textContent && textContent.length > 20 && !textContent.match(/^[\[\]\{\}\s,]*$/)) {
+                const textDiv = document.createElement('div');
+                textDiv.style.marginBottom = '15px';
+                textDiv.style.padding = '10px';
+                textDiv.style.backgroundColor = '#f8f9fa';
+                textDiv.style.borderRadius = '8px';
+                textDiv.style.borderLeft = '4px solid #667eea';
+                textDiv.textContent = textContent;
+                mixedContainer.appendChild(textDiv);
+            }
+
+            // Add company header
+            const companyHeader = document.createElement('div');
+            companyHeader.style.marginBottom = '15px';
+            companyHeader.style.padding = '12px';
+            companyHeader.style.backgroundColor = '#667eea';
+            companyHeader.style.color = 'white';
+            companyHeader.style.borderRadius = '8px';
+            companyHeader.style.fontWeight = '600';
+            companyHeader.textContent = `👥 Team Members - ${teamData.company}`;
+            mixedContainer.appendChild(companyHeader);
+
+            // Create cards container
+            const cardsContainer = document.createElement('div');
+            cardsContainer.className = 'team-cards-container';
+
+            teamData.team_members.forEach(member => {
+                const card = createTeamCard(member);
+                cardsContainer.appendChild(card);
+            });
+
+            mixedContainer.appendChild(cardsContainer);
+            messageContent.appendChild(mixedContainer);
+        }
+
+        function createEventCard(event) {
+            const card = document.createElement('div');
+            card.className = 'event-card';
+
+            // Fallback values for missing data
+            const title = event.title || 'Unknown Event';
+            const company = event.company || event.organizer || 'Unknown Organizer';
+            const category = event.category || 'Uncategorized';
+            const location = event.location || 'Location TBD';
+            const startDate = event.eventStartDate || event.startDate || '';
+            const endDate = event.eventEndDate || event.endDate || '';
+            const website = event.website || event.url || '#';
+            const featuredImage = event.featuredImage || event.image || '';
+
+            // Format dates
+            let dateText = '';
+            if (startDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                if (startDate === endDate || !endDate) {
+                    dateText = start.toLocaleDateString();
+                } else {
+                    dateText = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+                }
+            }
+
+            card.innerHTML = `
+                <div class="event-card-banner">
+                    ${featuredImage ? `<img src="${featuredImage}" alt="${title} banner" onerror="this.style.display='none'">` : ''}
+                </div>
+                <div class="event-card-header">
+                    <div class="event-card-title">${escapeHtml(title)}</div>
+                    <div class="event-card-company">by ${escapeHtml(company)}</div>
+                    ${category && category !== 'Uncategorized' ? `<span class="event-card-category">${escapeHtml(category)}</span>` : ''}
+                </div>
+                <div class="event-card-body">
+                    <div class="event-card-details">
+                        <div class="event-detail">
+                            <div class="event-detail-icon">📍</div>
+                            <span>${escapeHtml(location)}</span>
+                        </div>
+                        ${dateText ? `
+                        <div class="event-detail">
+                            <div class="event-detail-icon">📅</div>
+                            <span>${dateText}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="event-card-footer">
+                    <div class="event-date">${dateText}</div>
+                    ${website && website !== '#' ? `<a href="${website}" target="_blank" rel="noopener noreferrer" class="event-card-link">Visit Event</a>` : ''}
+                </div>
+            `;
+
+            return card;
+        }
+
+        function createTeamCard(member) {
+            const card = document.createElement('div');
+            card.className = 'team-card';
+
+            // Fallback values for missing data
+            const name = member.name || 'Unknown Member';
+            const title = member.title || member.jobTitle || 'Team Member';
+            const email = member.email || '';
+            const linkedin = member.linkedin || member.linkedinUrl || '';
+            const image = member.image || member.avatar || '';
+            const status = member.status || 'active';
+            const followers = member.followers || 0;
+            const responseRate = member.responseRate || 0;
+            const price = member.price || 0;
+
+            card.innerHTML = `
+                <div class="team-card-header">
+                    ${image ? `<img src="${image}" alt="${name} avatar" class="team-card-avatar" onerror="this.style.display='none'">` : ''}
+                    <div class="team-card-info">
+                        <div class="team-card-name">${escapeHtml(name)}</div>
+                        <div class="team-card-title">${escapeHtml(title)}</div>
+                    </div>
+                </div>
+                <div class="team-card-body">
+                    <div class="team-card-stats">
+                        <div class="team-stat">
+                            <div class="team-stat-value">${followers.toLocaleString()}</div>
+                            <div class="team-stat-label">Followers</div>
+                        </div>
+                        <div class="team-stat">
+                            <div class="team-stat-value">${responseRate}%</div>
+                            <div class="team-stat-label">Response Rate</div>
+                        </div>
+                        <div class="team-stat">
+                            <div class="team-stat-value">$${price}</div>
+                            <div class="team-stat-label">Price</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="team-card-footer">
+                    <span class="team-status ${status}">${status}</span>
+                    ${linkedin ? `<a href="${linkedin}" target="_blank" rel="noopener noreferrer" class="team-card-link">LinkedIn</a>` : ''}
+                </div>
+            `;
+
+            return card;
+        }
+
         function createCompanyCard(company) {
             const card = document.createElement('div');
             card.className = 'company-card';
@@ -1001,17 +1619,19 @@
             const description = company.shortDescription || company.description || company.desc || 'No description available';
             const category = company.category || company.cat || 'Uncategorized';
             const logo = company.logo || company.logoUrl || '';
+            const bannerImage = company.banner || company.bannerImage || '';
             const url = company.url || company.website || company.websiteUrl || '#';
-            const likes = company.likes || company.likeCount || 0;
-            const views = company.views || company.viewCount || 0;
             const verificationStatus = company.verificationStatus || company.status || 'pending';
             const founder = company.founderName || company.founder || '';
 
             // Truncate description if too long
-            const truncatedDescription = description.length > 150 ? 
-                description.substring(0, 150) + '...' : description;
+            const truncatedDescription = description.length > 120 ? 
+                description.substring(0, 120) + '...' : description;
 
             card.innerHTML = `
+                <div class="company-card-banner">
+                    ${bannerImage ? `<img src="${bannerImage}" alt="${name} banner" onerror="this.style.display='none'">` : ''}
+                </div>
                 <div class="company-card-header">
                     ${logo ? `<img src="${logo}" alt="${name} logo" class="company-card-logo" onerror="this.style.display='none'">` : ''}
                     <div class="company-card-title">${escapeHtml(name)}</div>
@@ -1019,23 +1639,10 @@
                 </div>
                 <div class="company-card-body">
                     <div class="company-card-description">${escapeHtml(truncatedDescription)}</div>
-                    ${founder ? `<div style="font-size: 12px; color: #6c757d; margin-bottom: 10px;">👤 Founder: ${escapeHtml(founder)}</div>` : ''}
-                    <div class="company-card-stats">
-                        <div class="company-stat">
-                            <span>👍</span>
-                            <span>${likes}</span>
-                        </div>
-                        <div class="company-stat">
-                            <span>👁️</span>
-                            <span>${views}</span>
-                        </div>
-                    </div>
+                    ${founder ? `<div style="font-size: 11px; color: #6c757d; margin-bottom: 6px;">👤 Founder: ${escapeHtml(founder)}</div>` : ''}
                 </div>
                 <div class="company-card-footer">
-                    <span class="verification-badge ${verificationStatus.toLowerCase()}">
-                        ${verificationStatus === 'verified' ? '✅' : verificationStatus === 'pending' ? '⏳' : '❌'} 
-                        ${escapeHtml(verificationStatus)}
-                    </span>
+                    
                     ${url && url !== '#' ? `<a href="${url}" target="_blank" rel="noopener noreferrer" class="company-card-link">Visit Website</a>` : ''}
                 </div>
             `;

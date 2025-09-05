@@ -19,6 +19,133 @@ class MCPClient:
         self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.available_tools = []
         self.conversation_history = []
+        
+        # Structured response templates
+        self.response_templates = {
+            "companies": {
+                "system_prompt": """You are a helpful assistant that provides information about companies from the Blockza directory. When presenting company information, always format your response using the following structure:
+
+For company lists, use this exact format:
+COMPANIES_DATA_START
+[
+  {
+    "_id": "company_id",
+    "name": "Company Name",
+    "category": "Category",
+    "shortDescription": "Brief description",
+    "logo": "logo_url",
+    "banner": "banner_url", 
+    "founderName": "Founder Name",
+    "verificationStatus": "verified|pending|rejected",
+    "url": "website_url",
+    "likes": 0,
+    "views": 0
+  }
+]
+COMPANIES_DATA_END
+
+Always include the COMPANIES_DATA_START and COMPANIES_DATA_END markers. Provide a brief summary after the data.""",
+                
+                "detection_patterns": [
+                    "search.*compan",
+                    "show.*compan",
+                    "list.*compan",
+                    "find.*compan",
+                    "get.*compan",
+                    "compan.*categor",
+                    "compan.*verif"
+                ]
+            },
+            
+            "events": {
+                "system_prompt": """You are a helpful assistant that provides information about events from the Blockza events directory. When presenting event information, always format your response using the following structure:
+
+For event lists, use this exact format:
+EVENTS_DATA_START
+[
+  {
+    "id": "event_id",
+    "title": "Event Title",
+    "company": "Organizer Company",
+    "category": "Event Category",
+    "location": "City, Country",
+    "eventStartDate": "2024-01-01T00:00:00Z",
+    "eventEndDate": "2024-01-02T00:00:00Z",
+    "website": "event_website_url",
+    "featuredImage": "image_url"
+  }
+]
+EVENTS_DATA_END
+
+Always include the EVENTS_DATA_START and EVENTS_DATA_END markers. Provide a brief summary after the data.""",
+                
+                "detection_patterns": [
+                    "search.*event",
+                    "show.*event",
+                    "list.*event",
+                    "find.*event",
+                    "get.*event",
+                    "event.*categor",
+                    "event.*location",
+                    "upcoming.*event"
+                ]
+            },
+            
+            "team_members": {
+                "system_prompt": """You are a helpful assistant that provides information about team members from companies in the Blockza directory. When presenting team member information, always format your response using the following structure:
+
+For team member lists, use this exact format:
+TEAM_DATA_START
+{
+  "company": "Company Name",
+  "team_members": [
+    {
+      "name": "Member Name",
+      "title": "Job Title",
+      "email": "email@company.com",
+      "linkedin": "linkedin_url",
+      "image": "profile_image_url",
+      "status": "active|inactive",
+      "followers": 0,
+      "responseRate": 0,
+      "price": 0,
+      "bookingMethods": ["method1", "method2"]
+    }
+  ]
+}
+TEAM_DATA_END
+
+Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief summary after the data.""",
+                
+                "detection_patterns": [
+                    "team.*member",
+                    "show.*team",
+                    "list.*team",
+                    "get.*team",
+                    "compan.*team",
+                    "founder.*team"
+                ]
+            }
+        }
+
+    def detect_query_intent(self, query: str) -> Optional[str]:
+        """Detect the intent of a query to determine which response template to use"""
+        import re
+        
+        query_lower = query.lower()
+        
+        for intent, template in self.response_templates.items():
+            for pattern in template["detection_patterns"]:
+                if re.search(pattern, query_lower):
+                    return intent
+        
+        return None
+
+    def get_system_prompt_for_intent(self, intent: str) -> str:
+        """Get the system prompt for a specific intent"""
+        if intent in self.response_templates:
+            return self.response_templates[intent]["system_prompt"]
+        return ""
 
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server"""
@@ -57,7 +184,28 @@ class MCPClient:
         if not self.session:
             return "Error: Not connected to MCP server"
 
-        # Add user message to history
+        # Detect query intent and get appropriate system prompt
+        intent = self.detect_query_intent(query)
+        system_prompt = self.get_system_prompt_for_intent(intent) if intent else ""
+        
+        # Prepare messages with system prompt if available
+        messages = []
+        if system_prompt:
+            messages.append({
+                "role": "system",
+                "content": system_prompt
+            })
+        
+        # Add conversation history
+        messages.extend(self.conversation_history)
+        
+        # Add current user message
+        messages.append({
+            "role": "user",
+            "content": query
+        })
+        
+        # Add user message to history for future reference
         self.conversation_history.append({
             "role": "user",
             "content": query
@@ -79,7 +227,7 @@ class MCPClient:
             # Initial OpenAI API call with timeout
             response = self.openai_client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=self.conversation_history,
+                messages=messages,
                 tools=tools,
                 tool_choice="auto",
                 max_tokens=1000,
@@ -105,10 +253,18 @@ class MCPClient:
                         "content": result.content[0].text if result.content else "No content returned"
                     })
 
-                # Get final response from OpenAI
+                # Get final response from OpenAI with system prompt
+                final_messages = []
+                if system_prompt:
+                    final_messages.append({
+                        "role": "system",
+                        "content": system_prompt
+                    })
+                final_messages.extend(self.conversation_history)
+                
                 final_response = self.openai_client.chat.completions.create(
                     model="gpt-4o-mini",
-                    messages=self.conversation_history,
+                    messages=final_messages,
                     max_tokens=1000,
                     timeout=30  # 30 second timeout
                 )
