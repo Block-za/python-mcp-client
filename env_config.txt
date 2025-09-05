@@ -1,0 +1,22 @@
+# Environment Configuration for Chat Application
+# Copy this file to .env and update the values
+
+# OpenAI API Key (required for AI responses)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Database Configuration
+# Option 1: Use DATABASE_URL (recommended for production)
+# DATABASE_URL=postgresql://username:password@host:port/database_name
+
+# Option 2: Use individual database settings (for local development)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=chat_app
+DB_USER=postgres
+DB_PASSWORD=password
+
+# Flask Configuration
+SECRET_KEY=your-secret-key-here-change-this-in-production
+
+# Optional: MCP Server Configuration
+# MCP_SERVER_PATH=path/to/your/mcp/server

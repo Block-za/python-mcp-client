@@ -210,6 +210,39 @@ Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief su
             "role": "user",
             "content": query
         })
+        
+        return await self._process_messages(messages)
+
+    async def process_query_with_context(self, context_messages: List[Dict[str, Any]]) -> str:
+        """Process a query with provided context messages (for chat application)"""
+        if not self.session:
+            return "Error: Not connected to MCP server"
+        
+        # Detect query intent from the last user message
+        last_user_message = None
+        for msg in reversed(context_messages):
+            if msg.get('role') == 'user':
+                last_user_message = msg.get('content', '')
+                break
+        
+        intent = self.detect_query_intent(last_user_message) if last_user_message else None
+        system_prompt = self.get_system_prompt_for_intent(intent) if intent else ""
+        
+        # Prepare messages with system prompt if available
+        messages = []
+        if system_prompt:
+            messages.append({
+                "role": "system",
+                "content": system_prompt
+            })
+        
+        # Add context messages
+        messages.extend(context_messages)
+        
+        return await self._process_messages(messages)
+
+    async def _process_messages(self, messages: List[Dict[str, Any]]) -> str:
+        """Internal method to process messages with OpenAI and tools"""
 
         # Prepare tools for OpenAI
         tools = []
@@ -235,7 +268,10 @@ Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief su
             )
 
             response_message = response.choices[0].message
-            self.conversation_history.append(response_message)
+            
+            # Only add to conversation history if this is a regular query (not context-based)
+            if len(messages) == len(self.conversation_history) + 2:  # system + user message
+                self.conversation_history.append(response_message)
 
             # Check if tool calls are needed
             if response_message.tool_calls:
@@ -246,21 +282,28 @@ Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief su
                     # Execute tool call
                     result = await self.session.call_tool(tool_name, tool_args)
                     
-                    # Add tool result to conversation
-                    self.conversation_history.append({
+                    # Add tool result to conversation (only for regular queries)
+                    if len(messages) == len(self.conversation_history) + 2:
+                        self.conversation_history.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": result.content[0].text if result.content else "No content returned"
+                        })
+
+                # Get final response from OpenAI
+                final_messages = messages.copy()
+                final_messages.append(response_message)
+                
+                # Add tool results
+                for tool_call in response_message.tool_calls:
+                    tool_name = tool_call.function.name
+                    tool_args = json.loads(tool_call.function.arguments)
+                    result = await self.session.call_tool(tool_name, tool_args)
+                    final_messages.append({
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": result.content[0].text if result.content else "No content returned"
                     })
-
-                # Get final response from OpenAI with system prompt
-                final_messages = []
-                if system_prompt:
-                    final_messages.append({
-                        "role": "system",
-                        "content": system_prompt
-                    })
-                final_messages.extend(self.conversation_history)
                 
                 final_response = self.openai_client.chat.completions.create(
                     model="gpt-4o-mini",
@@ -270,7 +313,11 @@ Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief su
                 )
 
                 final_message = final_response.choices[0].message
-                self.conversation_history.append(final_message)
+                
+                # Only add to conversation history if this is a regular query
+                if len(messages) == len(self.conversation_history) + 2:
+                    self.conversation_history.append(final_message)
+                    
                 return final_message.content
 
             return response_message.content
@@ -278,8 +325,9 @@ Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief su
         except Exception as e:
             error_msg = f"Error processing query: {str(e)}"
             print(error_msg)
-            # Clear conversation history on error to prevent corruption
-            self.conversation_history = []
+            # Only clear conversation history on error for regular queries
+            if len(messages) == len(self.conversation_history) + 2:
+                self.conversation_history = []
             return error_msg
 
     async def get_available_tools(self) -> List[Dict[str, Any]]:
