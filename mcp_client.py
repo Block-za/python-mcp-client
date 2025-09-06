@@ -190,7 +190,7 @@ For company listings, use this format:
         try:
             # Initial OpenAI API call with timeout
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=messages,
                 tools=tools,
                 tool_choice="auto",
@@ -237,7 +237,7 @@ For company listings, use this format:
                     })
                 
                 final_response = self.openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="gpt-4o",
                     messages=final_messages,
                     max_tokens=1000,
                     timeout=30  # 30 second timeout

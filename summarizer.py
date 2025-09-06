@@ -69,7 +69,7 @@ Summary:
         
         try:
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that creates concise summaries of conversations."},
                     {"role": "user", "content": summary_prompt}
