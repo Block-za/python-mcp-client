@@ -782,7 +782,6 @@
                 this.currentConversation = null;
                 this.conversations = [];
                 this.mcpConnected = false;
-                this.showWelcomeOnLoad = false;
                 
                 this.initializeElements();
                 this.attachEventListeners();
@@ -912,7 +911,9 @@
                     this.currentUser = null;
                     this.currentConversation = null;
                     this.conversations = [];
-                    this.showWelcomeOnLoad = false;
+                    
+                    // Clear stored conversation ID
+                    localStorage.removeItem('currentConversationId');
                     
                     // Clear UI state completely
                     this.clearChatInterface();
@@ -930,12 +931,35 @@
                     if (data.success) {
                         this.conversations = data.conversations;
                         this.renderConversations();
+                        
+                        // Auto-restore or create conversation
+                        await this.autoRestoreOrCreateConversation();
                     } else {
                         this.showError(data.error || 'Failed to load conversations');
                     }
                 } catch (error) {
                     this.showError('Failed to load conversations');
                 }
+            }
+
+            async autoRestoreOrCreateConversation() {
+                // Get the last viewed conversation ID from localStorage
+                const lastConversationId = localStorage.getItem('currentConversationId');
+                
+                // If we have a saved conversation ID and it exists in our conversations
+                if (lastConversationId && this.conversations.find(conv => conv.id == lastConversationId)) {
+                    await this.loadConversation(lastConversationId);
+                    return;
+                }
+                
+                // If we have conversations but the saved one doesn't exist, load the most recent
+                if (this.conversations.length > 0) {
+                    await this.loadConversation(this.conversations[0].id);
+                    return;
+                }
+                
+                // If no conversations exist, create a new one automatically
+                await this.createNewConversation();
             }
 
             renderConversations() {
@@ -1004,9 +1028,11 @@
 
                     if (data.success) {
                         await this.loadConversations();
-                        // Set flag to show welcome message
-                        this.showWelcomeOnLoad = true;
-                        this.loadConversation(data.conversation.id);
+                        // Load the new conversation directly
+                        await this.loadConversation(data.conversation.id);
+                        
+                        // Show welcome message for newly created conversations
+                        this.showWelcomeMessage();
                     } else {
                         this.showError(data.error || 'Failed to create conversation');
                     }
@@ -1025,6 +1051,9 @@
                         this.renderMessages(data.messages);
                         this.updateActiveConversation(conversationId);
                         this.enableChatInput();
+                        
+                        // Save current conversation ID to localStorage
+                        localStorage.setItem('currentConversationId', conversationId);
                     } else {
                         this.showError(data.error || 'Failed to load conversation');
                     }
@@ -1038,13 +1067,7 @@
                 this.chatTitle.textContent = this.currentConversation.title;
 
                 if (messages.length === 0) {
-                    // Show welcome message only for newly created conversations
-                    if (this.showWelcomeOnLoad) {
-                        this.showWelcomeMessage();
-                        this.showWelcomeOnLoad = false; // Reset flag
-                    } else {
-                        this.chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
-                    }
+                    this.chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
                     return;
                 }
 
@@ -1376,12 +1399,13 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        // If we're deleting the current conversation, clear the interface
-                        if (this.currentConversation && this.currentConversation.id === conversationId) {
+                        // If we're deleting the current conversation, clear the interface and localStorage
+                        if (this.currentConversation && this.currentConversation.id == conversationId) {
                             this.clearChatInterface();
+                            localStorage.removeItem('currentConversationId');
                         }
                         
-                        // Reload conversations list
+                        // Reload conversations list (which will auto-select another conversation)
                         await this.loadConversations();
                         
                         this.showSuccess('Conversation deleted successfully');
