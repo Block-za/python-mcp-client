@@ -5,7 +5,7 @@ import threading
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 from mcp_client import MCPClient
-from database import init_database, db, get_conversations_by_email, create_conversation, get_conversation_by_id, add_message, get_messages_for_context, get_all_messages_for_conversation, should_summarize_conversation, create_conversation_summary
+from database import init_database, db, get_conversations_by_email, create_conversation, get_conversation_by_id, add_message, get_messages_for_context, get_all_messages_for_conversation, should_summarize_conversation, create_conversation_summary, delete_conversation
 from summarizer import ConversationSummarizer
 
 app = Flask(__name__)
@@ -373,6 +373,28 @@ def get_conversation_context(conversation_id):
             'success': True,
             'context_messages': [msg.to_dict() for msg in context_messages]
         })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/conversations/<int:conversation_id>', methods=['DELETE'])
+def delete_conversation_endpoint(conversation_id):
+    """Delete a conversation and all its messages"""
+    email = session.get('email')
+    if not email:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    try:
+        # Delete the conversation (with email verification for security)
+        success, message = delete_conversation(conversation_id, email)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': message
+            })
+        else:
+            return jsonify({'error': message}), 404
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

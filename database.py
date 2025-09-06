@@ -189,3 +189,28 @@ def create_conversation_summary(conversation_id, summary_content):
     # For now, we'll keep them but mark them as summarized
     
     return summary_message
+
+def delete_conversation(conversation_id, email=None):
+    """
+    Delete a conversation and all its messages.
+    If email is provided, ensures the conversation belongs to that user.
+    """
+    try:
+        # Get the conversation
+        query = Conversation.query.filter_by(id=conversation_id)
+        if email:
+            query = query.filter_by(email=email)
+        
+        conversation = query.first()
+        if not conversation:
+            return False, "Conversation not found"
+        
+        # Delete the conversation (messages will be deleted automatically due to cascade)
+        db.session.delete(conversation)
+        db.session.commit()
+        
+        return True, "Conversation deleted successfully"
+        
+    except Exception as e:
+        db.session.rollback()
+        return False, f"Error deleting conversation: {str(e)}"
