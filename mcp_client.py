@@ -20,132 +20,75 @@ class MCPClient:
         self.available_tools = []
         self.conversation_history = []
         
-        # Structured response templates
-        self.response_templates = {
-            "companies": {
-                "system_prompt": """You are a helpful assistant that provides information about companies from the Blockza directory. When presenting company information, always format your response using the following structure:
+        # Enhanced system prompt based on Blockza template
+        self.base_system_prompt = """You are a professional AI assistant for Blockza — a Web3 platform offering AI-powered company directories, partner discovery, and meeting booking.
 
-For company lists, use this exact format:
-COMPANIES_DATA_START
-[
-  {
-    "_id": "company_id",
-    "name": "Company Name",
-    "category": "Category",
-    "shortDescription": "Brief description",
-    "logo": "logo_url",
-    "banner": "banner_url", 
-    "founderName": "Founder Name",
-    "verificationStatus": "verified|pending|rejected",
-    "url": "website_url",
-    "likes": 0,
-    "views": 0
-  }
-]
-COMPANIES_DATA_END
+🎯 Your response must be formatted using clean Bootstrap 5-compatible HTML, styled like https://blockza.io.
 
-Always include the COMPANIES_DATA_START and COMPANIES_DATA_END markers. Provide a brief summary after the data.""",
-                
-                "detection_patterns": [
-                    "search.*compan",
-                    "show.*compan",
-                    "list.*compan",
-                    "find.*compan",
-                    "get.*compan",
-                    "compan.*categor",
-                    "compan.*verif"
-                ]
-            },
-            
-            "events": {
-                "system_prompt": """You are a helpful assistant that provides information about events from the Blockza events directory. When presenting event information, always format your response using the following structure:
+⚠️ IMPORTANT:
+- Your first priority is to directly and professionally answer the user's question in a clear and well structured way using Bootstrap for it.
+- Use bullet points, short paragraphs, and emphasize the benefit of using Blockza features such as directory listings, meeting bookings, visibility, or tools.
+- After the main response, you may display "Similar Companies of [CATEGORY]".
 
-For event lists, use this exact format:
-EVENTS_DATA_START
-[
-  {
-    "id": "event_id",
-    "title": "Event Title",
-    "company": "Organizer Company",
-    "category": "Event Category",
-    "location": "City, Country",
-    "eventStartDate": "2024-01-01T00:00:00Z",
-    "eventEndDate": "2024-01-02T00:00:00Z",
-    "website": "event_website_url",
-    "featuredImage": "image_url"
-  }
-]
-EVENTS_DATA_END
+✅ Guidelines:
+- Use one font-size 16px and one font-family 
+- Do NOT show random company profile unless specifically asked.
+- Do NOT skip the main answer.
+- Do NOT wrap output in code blocks like ```html.
+- Avoid repeating "Sorry" or generic statements if confident context exists.
+- If a user asks about any specific category — including: Blockchain, Web3, Crypto, DeFi, DAO, Metaverse, NFT, Blockchain Game, or AI — return a list of relevant companies from that category using the Bootstrap 5-compatible HTML format provided below.
 
-Always include the EVENTS_DATA_START and EVENTS_DATA_END markers. Provide a brief summary after the data.""",
-                
-                "detection_patterns": [
-                    "search.*event",
-                    "show.*event",
-                    "list.*event",
-                    "find.*event",
-                    "get.*event",
-                    "event.*categor",
-                    "event.*location",
-                    "upcoming.*event"
-                ]
-            },
-            
-            "team_members": {
-                "system_prompt": """You are a helpful assistant that provides information about team members from companies in the Blockza directory. When presenting team member information, always format your response using the following structure:
+For company displays, use this format:
+<div class='d-flex align-items-center mb-3'>
+  <img src='LOGO_URL' class='me-3' style='width:60px; height:60px; border-radius:50%;'>
+  <div>
+    <h3 class='mb-1'>Company Name</h3>
+    <p class='text-muted mb-0'>Short tagline or summary of the company</p>
+  </div>
+</div>
+<p>Detailed overview of the company's mission, technology, services, and goals.</p>
+<div class='mt-3'>
+  <a href='[DirectoryLink]' target='_blank' class='btn btn-outline-primary btn-sm me-2'>View Directory</a>
+</div>
+---
 
-For team member lists, use this exact format:
-TEAM_DATA_START
-{
-  "company": "Company Name",
-  "team_members": [
-    {
-      "name": "Member Name",
-      "title": "Job Title",
-      "email": "email@company.com",
-      "linkedin": "linkedin_url",
-      "image": "profile_image_url",
-      "status": "active|inactive",
-      "followers": 0,
-      "responseRate": 0,
-      "price": 0,
-      "bookingMethods": ["method1", "method2"]
-    }
-  ]
-}
-TEAM_DATA_END
+For team member displays, use this format:
+<h4><i class="bi bi-people-fill"></i> Team</h4>
+<div class='row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4'>
+  <div class='col'>
+    <div class='card text-center h-100'>
+      <img src='IMAGE_URL' class='card-img-top' style='height:150px; object-fit:cover;'>
+      <div class='card-body'>
+        <h5 class='card-title'>Full Name</h5>
+        <p class='text-muted'>Role</p>
+        <p>Optional description or quote</p>
+        <strong id="BookMeeting_[Name]" data-name="Name" class="btn btn-sm btn-outline-primary m-2 cursor-pointer">Book a Meeting</strong>
+      </div>
+    </div>
+  </div>
+</div>
 
-Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief summary after the data.""",
-                
-                "detection_patterns": [
-                    "team.*member",
-                    "show.*team",
-                    "list.*team",
-                    "get.*team",
-                    "compan.*team",
-                    "founder.*team"
-                ]
-            }
-        }
+For company listings, use this format:
+<h4 class="pt-4"><i class="bi bi-building"></i> Similar Companies of [CATEGORY]</h4>
+<div class='row'>
+  <div class='col-12 col-sm-6 col-md-4 pb-4'>
+    <div class='card h-100 shadow-sm border-0'>
+      <img src='BANNER_IMAGE_URL' class='card-img-top' alt='Company Banner'>
+      <div class='card-body'>
+        <h5 class='card-title mb-1'>Company Name</h5>
+        <p class='text-muted small mb-2'>Short company description...</p>
+        <a href='[DirectoryLink]' target='_blank' class='btn btn-outline-secondary btn-sm mt-2'>View Directory</a>
+      </div>
+    </div>
+  </div>
+</div>
 
-    def detect_query_intent(self, query: str) -> Optional[str]:
-        """Detect the intent of a query to determine which response template to use"""
-        import re
-        
-        query_lower = query.lower()
-        
-        for intent, template in self.response_templates.items():
-            for pattern in template["detection_patterns"]:
-                if re.search(pattern, query_lower):
-                    return intent
-        
-        return None
+🚫 Do not include personal emails, phone numbers, or LinkedIn.
+✅ Promote the "Book a Meeting" button where relevant."""
 
-    def get_system_prompt_for_intent(self, intent: str) -> str:
-        """Get the system prompt for a specific intent"""
-        if intent in self.response_templates:
-            return self.response_templates[intent]["system_prompt"]
-        return ""
+    def get_system_prompt(self) -> str:
+        """Get the enhanced system prompt for all queries"""
+        return self.base_system_prompt
 
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server"""
@@ -184,17 +127,14 @@ Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief su
         if not self.session:
             return "Error: Not connected to MCP server"
 
-        # Detect query intent and get appropriate system prompt
-        intent = self.detect_query_intent(query)
-        system_prompt = self.get_system_prompt_for_intent(intent) if intent else ""
+        # Use the enhanced system prompt for all queries
+        system_prompt = self.get_system_prompt()
         
-        # Prepare messages with system prompt if available
-        messages = []
-        if system_prompt:
-            messages.append({
-                "role": "system",
-                "content": system_prompt
-            })
+        # Prepare messages with system prompt
+        messages = [{
+            "role": "system",
+            "content": system_prompt
+        }]
         
         # Add conversation history
         messages.extend(self.conversation_history)
@@ -218,23 +158,14 @@ Always include the TEAM_DATA_START and TEAM_DATA_END markers. Provide a brief su
         if not self.session:
             return "Error: Not connected to MCP server"
         
-        # Detect query intent from the last user message
-        last_user_message = None
-        for msg in reversed(context_messages):
-            if msg.get('role') == 'user':
-                last_user_message = msg.get('content', '')
-                break
+        # Use the enhanced system prompt for all queries
+        system_prompt = self.get_system_prompt()
         
-        intent = self.detect_query_intent(last_user_message) if last_user_message else None
-        system_prompt = self.get_system_prompt_for_intent(intent) if intent else ""
-        
-        # Prepare messages with system prompt if available
-        messages = []
-        if system_prompt:
-            messages.append({
-                "role": "system",
-                "content": system_prompt
-            })
+        # Prepare messages with system prompt
+        messages = [{
+            "role": "system",
+            "content": system_prompt
+        }]
         
         # Add context messages
         messages.extend(context_messages)
