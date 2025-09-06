@@ -172,7 +172,28 @@ For company listings, use this format:
         
         return await self._process_messages(messages)
 
-    async def _process_messages(self, messages: List[Dict[str, Any]]) -> str:
+    async def process_query_with_context_stream(self, context_messages: List[Dict[str, Any]]):
+        """Process a query with provided context messages and stream the response"""
+        if not self.session:
+            yield "Error: Not connected to MCP server"
+            return
+        
+        # Use the enhanced system prompt for all queries
+        system_prompt = self.get_system_prompt()
+        
+        # Prepare messages with system prompt
+        messages = [{
+            "role": "system",
+            "content": system_prompt
+        }]
+        
+        # Add context messages
+        messages.extend(context_messages)
+        
+        async for chunk in self._process_messages_stream(messages):
+            yield chunk
+
+    async def _process_messages(self, messages: List[Dict[str, Any]], stream: bool = False) -> str:
         """Internal method to process messages with OpenAI and tools"""
 
         # Prepare tools for OpenAI
@@ -195,7 +216,8 @@ For company listings, use this format:
                 tools=tools,
                 tool_choice="auto",
                 max_tokens=1000,
-                timeout=30  # 30 second timeout
+                timeout=30,  # 30 second timeout
+                stream=stream
             )
 
             response_message = response.choices[0].message
@@ -260,6 +282,113 @@ For company listings, use this format:
             if len(messages) == len(self.conversation_history) + 2:
                 self.conversation_history = []
             return error_msg
+
+    async def _process_messages_stream(self, messages: List[Dict[str, Any]]):
+        """Internal method to stream messages with OpenAI and tools"""
+        
+        if not self.session:
+            yield "Error: Not connected to MCP server"
+            return
+        
+        # Prepare tools for OpenAI
+        tools = []
+        for tool in self.available_tools:
+            tools.append({
+                "type": "function",
+                "function": {
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "parameters": tool["input_schema"]
+                }
+            })
+
+        try:
+            # Initial OpenAI API call with streaming
+            stream = self.openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+                max_tokens=1000,
+                timeout=30,
+                stream=True
+            )
+
+            full_response = ""
+            tool_calls = []
+            current_tool_call = None
+            
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    full_response += content
+                    yield content
+                
+                # Handle tool calls in streaming
+                if chunk.choices[0].delta.tool_calls:
+                    for tool_call in chunk.choices[0].delta.tool_calls:
+                        if tool_call.index is not None:
+                            # New tool call
+                            if current_tool_call:
+                                tool_calls.append(current_tool_call)
+                            current_tool_call = {
+                                "id": tool_call.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tool_call.function.name if tool_call.function.name else "",
+                                    "arguments": tool_call.function.arguments if tool_call.function.arguments else ""
+                                }
+                            }
+                        else:
+                            # Continuation of current tool call
+                            if current_tool_call and tool_call.function.arguments:
+                                current_tool_call["function"]["arguments"] += tool_call.function.arguments
+
+            # Add final tool call if any
+            if current_tool_call:
+                tool_calls.append(current_tool_call)
+
+            # Process tool calls if any
+            if tool_calls:
+                yield "\n\n*Processing tool calls...*\n"
+                
+                # Execute tool calls
+                tool_results = []
+                for tool_call in tool_calls:
+                    tool_name = tool_call["function"]["name"]
+                    tool_args = json.loads(tool_call["function"]["arguments"])
+                    
+                    result = await self.session.call_tool(tool_name, tool_args)
+                    tool_results.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call["id"],
+                        "content": result.content[0].text if result.content else "No content returned"
+                    })
+
+                # Get final response with tool results
+                final_messages = messages.copy()
+                final_messages.append({
+                    "role": "assistant",
+                    "content": full_response,
+                    "tool_calls": tool_calls
+                })
+                final_messages.extend(tool_results)
+                
+                final_stream = self.openai_client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=final_messages,
+                    max_tokens=1000,
+                    timeout=30,
+                    stream=True
+                )
+
+                for chunk in final_stream:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+
+        except Exception as e:
+            error_msg = f"Error processing query: {str(e)}"
+            yield error_msg
 
     async def get_available_tools(self) -> List[Dict[str, Any]]:
         """Get list of available tools"""

@@ -557,6 +557,41 @@
             text-align: center;
         }
 
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #95a5a6;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
         /* Chat Input */
         .chat-input-container {
             padding: 20px;
@@ -1095,6 +1130,9 @@
                 
                 // Add event listeners for any "Book a Meeting" buttons in the new message
                 this.addBookingEventListeners(messageElement);
+                
+                // Return the element so it can be used for streaming updates
+                return messageElement;
             }
             
             addBookingEventListeners(messageElement) {
@@ -1137,6 +1175,145 @@
                 this.sendBtn.disabled = true;
                 this.sendBtn.textContent = 'Sending...';
 
+                this.messageInput.value = '';
+                this.messageInput.style.height = 'auto';
+
+                try {
+                    // Use streaming endpoint if MCP is connected
+                    if (this.mcpConnected) {
+                        await this.handleStreamingMessage(content);
+                    } else {
+                        await this.handleRegularMessage(content);
+                    }
+                } finally {
+                    this.sendBtn.disabled = false;
+                    this.sendBtn.textContent = 'Send';
+                }
+            }
+
+            async handleStreamingMessage(content) {
+                // Use fetch for streaming (EventSource doesn't support POST with body)
+                const response = await fetch(`/api/conversations/${this.currentConversation.id}/messages/stream`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content })
+                });
+
+                if (!response.ok) {
+                    this.showError('Failed to send message');
+                    return;
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                let assistantMessage = null;
+                let assistantContent = '';
+                let currentMessageElement = null;
+
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            // Ensure button is reset when stream ends
+                            this.sendBtn.disabled = false;
+                            this.sendBtn.textContent = 'Send';
+                            break;
+                        }
+
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    console.log('Received streaming data:', data); // Debug log
+                                    
+                                    switch (data.type) {
+                                        case 'user_message':
+                                            this.addMessageToChat(data.message);
+                                            break;
+                                            
+                                        case 'typing':
+                                            if (data.status === 'start') {
+                                                // Add typing indicator
+                                                assistantMessage = {
+                                                    id: 'typing-' + Date.now(),
+                                                    role: 'assistant',
+                                                    content: '',
+                                                    timestamp: new Date().toISOString()
+                                                };
+                                                currentMessageElement = this.addMessageToChat(assistantMessage);
+                                                this.showTypingIndicator(currentMessageElement);
+                                            }
+                                            break;
+                                            
+                                        case 'content':
+                                            // Update the message content incrementally
+                                            assistantContent += data.content;
+                                            if (currentMessageElement) {
+                                                this.updateMessageContent(currentMessageElement, assistantContent);
+                                            }
+                                            this.scrollToBottom();
+                                            break;
+                                            
+                                        case 'assistant_message':
+                                            // Update with final saved message
+                                            if (currentMessageElement) {
+                                                this.replaceMessageElement(currentMessageElement, data.message);
+                                            }
+                                            break;
+                                            
+                                        case 'complete':
+                                            // Reload conversations to update counts with timeout
+                                            try {
+                                                const timeoutPromise = new Promise((_, reject) => 
+                                                    setTimeout(() => reject(new Error('Timeout')), 5000)
+                                                );
+                                                await Promise.race([this.loadConversations(), timeoutPromise]);
+                                            } catch (e) {
+                                                console.warn('Failed to reload conversations:', e);
+                                            }
+                                            // Reset send button
+                                            this.sendBtn.disabled = false;
+                                            this.sendBtn.textContent = 'Send';
+                                            break;
+                                            
+                                        case 'error':
+                                            this.showError(data.error);
+                                            if (currentMessageElement) {
+                                                this.chatMessages.removeChild(currentMessageElement);
+                                            }
+                                            // Reset send button on error
+                                            this.sendBtn.disabled = false;
+                                            this.sendBtn.textContent = 'Send';
+                                            break;
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing SSE data:', e, 'Line:', line);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Streaming error:', error);
+                    this.showError('Streaming error: ' + error.message);
+                    if (currentMessageElement) {
+                        this.chatMessages.removeChild(currentMessageElement);
+                    }
+                } finally {
+                    // Ensure send button is re-enabled in case of any errors
+                    if (this.sendBtn.disabled) {
+                        this.sendBtn.disabled = false;
+                        this.sendBtn.textContent = 'Send';
+                    }
+                }
+            }
+
+            async handleRegularMessage(content) {
                 // Add user message immediately
                 const userMessage = {
                     id: 'temp-' + Date.now(),
@@ -1145,16 +1322,9 @@
                     timestamp: new Date().toISOString()
                 };
                 this.addMessageToChat(userMessage);
-                this.messageInput.value = '';
-                this.messageInput.style.height = 'auto';
 
                 try {
-                    // Use MCP-powered endpoint if connected, otherwise use regular chat
-                    const endpoint = this.mcpConnected ? 
-                        `/api/conversations/${this.currentConversation.id}/messages` : 
-                        `/api/conversations/${this.currentConversation.id}/messages`;
-                    
-                    const response = await fetch(endpoint, {
+                    const response = await fetch(`/api/conversations/${this.currentConversation.id}/messages`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1181,11 +1351,42 @@
                     this.showError('Failed to send message');
                     // Remove the temporary message
                     this.chatMessages.removeChild(this.chatMessages.lastChild);
-                } finally {
-                    this.sendBtn.disabled = false;
-                    this.sendBtn.textContent = 'Send';
-                    this.scrollToBottom();
                 }
+                
+                this.scrollToBottom();
+            }
+
+            showTypingIndicator(messageElement) {
+                if (!messageElement) {
+                    console.error('showTypingIndicator: messageElement is undefined');
+                    return;
+                }
+                const contentDiv = messageElement.querySelector('.message-content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+                } else {
+                    console.error('showTypingIndicator: .message-content not found');
+                }
+            }
+
+            updateMessageContent(messageElement, content) {
+                if (!messageElement) {
+                    console.error('updateMessageContent: messageElement is undefined');
+                    return;
+                }
+                const contentDiv = messageElement.querySelector('.message-content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = this.formatMessageContent(content);
+                } else {
+                    console.error('updateMessageContent: .message-content not found');
+                }
+            }
+
+            replaceMessageElement(currentElement, newMessage) {
+                // Update the element with the final message data
+                currentElement.setAttribute('data-message-id', newMessage.id);
+                const contentDiv = currentElement.querySelector('.message-content');
+                contentDiv.innerHTML = this.formatMessageContent(newMessage.content);
             }
 
             updateActiveConversation(conversationId) {

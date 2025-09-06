@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import threading
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, Response
 from flask_cors import CORS
 from mcp_client import MCPClient
 from database import init_database, db, get_conversations_by_email, create_conversation, get_conversation_by_id, add_message, get_messages_for_context, get_all_messages_for_conversation, should_summarize_conversation, create_conversation_summary, delete_conversation
@@ -99,6 +99,67 @@ def process_query():
             'success': True,
             'response': response
         })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/query/stream', methods=['POST', 'OPTIONS'])
+def process_query_stream():
+    """Process a query with streaming response for the simple MCP interface"""
+    # Handle preflight requests
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    global mcp_client
+    
+    if not mcp_client:
+        return jsonify({'error': 'Not connected to MCP server'}), 400
+    
+    try:
+        data = request.get_json()
+        query = data.get('query')
+        
+        if not query:
+            return jsonify({'error': 'Query is required'}), 400
+        
+        def generate_stream():
+            """Generator function for streaming response"""
+            try:
+                loop = get_or_create_loop()
+                
+                # Create the streaming coroutine
+                async def stream_response():
+                    async for chunk in mcp_client.process_query_with_context_stream([{
+                        'role': 'user',
+                        'content': query
+                    }]):
+                        yield chunk
+                
+                # Run the async generator in the loop
+                async_gen = stream_response()
+                
+                try:
+                    while True:
+                        try:
+                            chunk = loop.run_until_complete(async_gen.__anext__())
+                            yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
+                        except StopAsyncIteration:
+                            break
+                except Exception as e:
+                    yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+                
+                yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+                
+            except Exception as e:
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+        
+        return Response(generate_stream(), mimetype='text/event-stream',
+                       headers={
+                           'Cache-Control': 'no-cache', 
+                           'Connection': 'keep-alive',
+                           'Access-Control-Allow-Origin': '*',
+                           'Access-Control-Allow-Methods': 'POST',
+                           'Access-Control-Allow-Headers': 'Content-Type'
+                       })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -349,6 +410,135 @@ def send_message(conversation_id):
             'user_message': user_message.to_dict(),
             'assistant_message': assistant_message.to_dict()
         })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/conversations/<int:conversation_id>/messages/stream', methods=['POST', 'OPTIONS'])
+def send_message_stream(conversation_id):
+    """Send a message in a conversation with streaming response"""
+    # Handle preflight requests
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    email = session.get('email')
+    if not email:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    try:
+        data = request.get_json()
+        message_content = data.get('content')
+        
+        if not message_content:
+            return jsonify({'error': 'Message content is required'}), 400
+        
+        # Verify conversation belongs to user
+        conversation = get_conversation_by_id(conversation_id, email)
+        if not conversation:
+            return jsonify({'error': 'Conversation not found'}), 404
+        
+        # Add user message
+        user_message = add_message(conversation_id, 'user', message_content)
+        
+        # If this is the first message, update conversation title
+        if len(conversation.messages) == 1:  # Only the message we just added
+            title = summarizer.generate_conversation_title(message_content)
+            conversation.title = title
+            db.session.commit()
+        
+        # Get context for AI response (including summaries)
+        import database
+        context_messages = summarizer.build_context_with_summary(conversation_id, database)
+        
+        # Prepare messages for MCP client
+        mcp_messages = []
+        for msg in context_messages:
+            mcp_messages.append({
+                'role': msg['role'],
+                'content': msg['content']
+            })
+        
+        # Add current user message
+        mcp_messages.append({
+            'role': 'user',
+            'content': message_content
+        })
+        
+        def generate_stream():
+            """Generator function for streaming response"""
+            if not mcp_client:
+                yield f"data: {json.dumps({'type': 'error', 'error': 'Not connected to MCP server'})}\n\n"
+                return
+            
+            try:
+                # Send user message first
+                with app.app_context():
+                    yield f"data: {json.dumps({'type': 'user_message', 'message': user_message.to_dict()})}\n\n"
+                
+                # Send typing indicator
+                yield f"data: {json.dumps({'type': 'typing', 'status': 'start'})}\n\n"
+                
+                # Start streaming the assistant response
+                assistant_content = ""
+                loop = get_or_create_loop()
+                
+                # Create the streaming coroutine
+                async def stream_response():
+                    nonlocal assistant_content
+                    try:
+                        async for chunk in mcp_client.process_query_with_context_stream(mcp_messages):
+                            assistant_content += chunk
+                            yield chunk
+                    except Exception as e:
+                        yield f"Error in MCP client streaming: {str(e)}"
+                
+                # Run the async generator in the loop
+                async_gen = stream_response()
+                
+                try:
+                    while True:
+                        try:
+                            chunk = loop.run_until_complete(async_gen.__anext__())
+                            yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
+                        except StopAsyncIteration:
+                            break
+                        except GeneratorExit:
+                            # Handle generator cleanup properly
+                            break
+                        except Exception as chunk_error:
+                            yield f"data: {json.dumps({'type': 'error', 'error': f'Chunk processing error: {str(chunk_error)}'})}\n\n"
+                            break
+                except Exception as e:
+                    yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+                    assistant_content = f"Error processing message: {str(e)}"
+                finally:
+                    # Ensure the async generator is properly closed
+                    try:
+                        loop.run_until_complete(async_gen.aclose())
+                    except:
+                        pass
+                
+                # Save the complete assistant response to database within app context
+                try:
+                    with app.app_context():
+                        assistant_message = add_message(conversation_id, 'assistant', assistant_content)
+                        
+                        # Send completion signal with saved message
+                        yield f"data: {json.dumps({'type': 'assistant_message', 'message': assistant_message.to_dict()})}\n\n"
+                        yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+                except Exception as db_error:
+                    yield f"data: {json.dumps({'type': 'error', 'error': f'Database error: {str(db_error)}'})}\n\n"
+                
+            except Exception as e:
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+        
+        return Response(generate_stream(), mimetype='text/event-stream',
+                       headers={
+                           'Cache-Control': 'no-cache', 
+                           'Connection': 'keep-alive',
+                           'Access-Control-Allow-Origin': '*',
+                           'Access-Control-Allow-Methods': 'POST',
+                           'Access-Control-Allow-Headers': 'Content-Type'
+                       })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

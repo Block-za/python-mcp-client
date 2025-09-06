@@ -232,6 +232,41 @@
             border-color: #667eea;
         }
 
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #95a5a6;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
         .tools-panel {
             background: #f8f9fa;
             padding: 12px 20px;
@@ -1748,6 +1783,101 @@
             showMessage(message, true);
             input.value = '';
 
+            // Try streaming first, fallback to regular if needed
+            try {
+                await sendMessageStream(message);
+            } catch (error) {
+                console.log('Streaming failed, using regular request:', error);
+                await sendMessageRegular(message);
+            }
+        }
+
+        async function sendMessageStream(message) {
+            // Add assistant message placeholder with typing indicator
+            const assistantMessageDiv = document.createElement('div');
+            assistantMessageDiv.className = 'message assistant';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'AI';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            
+            assistantMessageDiv.appendChild(avatar);
+            assistantMessageDiv.appendChild(messageContent);
+            document.getElementById('chatMessages').appendChild(assistantMessageDiv);
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+
+            // Start streaming
+            const response = await fetch('/api/query/stream', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: message })
+            });
+
+            if (!response.ok) {
+                throw new Error('Streaming request failed');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let assistantContent = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                
+                                switch (data.type) {
+                                    case 'content':
+                                        assistantContent += data.content;
+                                        // Check if content contains structured data and render accordingly
+                                        if (tryRenderStructuredData(assistantContent, messageContent)) {
+                                            // Structured data was rendered
+                                        } else {
+                                            // Regular text content - preserve line breaks and formatting
+                                            messageContent.innerHTML = assistantContent.replace(/\n/g, '<br>');
+                                        }
+                                        document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+                                        break;
+                                        
+                                    case 'complete':
+                                        // Final update - make sure content is properly formatted
+                                        if (tryRenderStructuredData(assistantContent, messageContent)) {
+                                            // Structured data was rendered
+                                        } else {
+                                            messageContent.innerHTML = assistantContent.replace(/\n/g, '<br>');
+                                        }
+                                        break;
+                                        
+                                    case 'error':
+                                        messageContent.innerHTML = `<span style="color: red;">Error: ${data.error}</span>`;
+                                        break;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                messageContent.innerHTML = `<span style="color: red;">Streaming error: ${error.message}</span>`;
+            }
+        }
+
+        async function sendMessageRegular(message) {
             showLoading();
             try {
                 // Add timeout to the fetch request
