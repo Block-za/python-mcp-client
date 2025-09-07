@@ -29,6 +29,7 @@ class MCPClient:
 - Your first priority is to directly and professionally answer the user's question in a clear and well structured way using Bootstrap for it.
 - Use bullet points, short paragraphs, and emphasize the benefit of using Blockza features such as directory listings, meeting bookings, visibility, or tools.
 - After the main response, you may display "Similar Companies of [CATEGORY]".
+- When users ask for companies by category (Web3, NFT, Blockchain, AI, DeFi, etc.), ALWAYS use the "get_companies_by_category" tool for the most accurate category-specific results.
 
 ✅ Guidelines:
 - Use one font-size 16px and one font-family 
