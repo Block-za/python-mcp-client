@@ -30,7 +30,7 @@
 
         /* Sidebar Styles */
         .sidebar {
-            width: 300px;
+            width: 260px;
             background: #2c3e50;
             color: white;
             display: flex;
@@ -44,20 +44,16 @@
             width: 60px;
         }
 
-        .sidebar.collapsed .sidebar-header h2,
-        .sidebar.collapsed .user-info,
+        .sidebar.collapsed .logo-text,
         .sidebar.collapsed .new-chat-btn,
         .sidebar.collapsed .conversations-list {
             opacity: 0;
             pointer-events: none;
         }
 
-        .sidebar.collapsed .sidebar-toggle {
-            transform: rotate(180deg);
-        }
 
         .sidebar-header {
-            padding: 20px;
+            padding: 14px;
             border-bottom: 1px solid #34495e;
             position: relative;
         }
@@ -71,7 +67,7 @@
             color: white;
             width: 30px;
             height: 30px;
-            border-radius: 50%;
+            border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -79,6 +75,17 @@
             font-size: 14px;
             transition: all 0.3s ease;
             z-index: 10;
+            padding: 6px;
+        }
+
+        .sidebar-toggle svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed .sidebar-toggle svg {
+            transform: rotate(0deg);
         }
 
         .sidebar-toggle:hover {
@@ -92,11 +99,34 @@
             transition: opacity 0.3s ease;
         }
 
-        .user-info {
-            font-size: 14px;
-            color: #bdc3c7;
+        /* Logo Styles */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-image {
+            height: 40px;
+            width: auto;
+            max-width: 140px;
+            object-fit: contain;
             transition: opacity 0.3s ease;
         }
+
+        .logo-text {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 600;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Hide entire logo when sidebar is collapsed */
+        .sidebar.collapsed .logo-container {
+            opacity: 0;
+            pointer-events: none;
+        }
+
 
         .new-chat-btn {
             margin: 20px;
@@ -123,21 +153,21 @@
         }
 
         .conversation-item {
-            padding: 12px;
-            margin-bottom: 8px;
-            background: #34495e;
-            border-radius: 8px;
+            padding: 1px 10px;
+            background: transparent;
+            border-radius: 6px;
             cursor: pointer;
             transition: background 0.3s;
             border: 1px solid transparent;
             position: relative;
             display: flex;
+            font-size: 0.8rem;
             justify-content: space-between;
             align-items: center;
         }
 
         .conversation-item:hover {
-            background: #3c4f66;
+            background: #34495e;
         }
 
         .conversation-item.active {
@@ -146,14 +176,63 @@
         }
 
         .conversation-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 0;
+            line-height: 1.3;
         }
 
         .conversation-meta {
             font-size: 12px;
             color: #bdc3c7;
+            display: none; /* Hide individual dates, will show in separators */
+        }
+
+        /* Date Separator Styles */
+        .date-separator {
+            padding: 8px 16px 4px 16px;
+            margin-bottom: 4px;
+            position: sticky;
+            top: 0;
+            background: #2c3e50;
+            z-index: 10;
+        }
+
+        .date-separator-text {
+            font-size: 11px;
+            font-weight: 600;
+            color: #95a5a6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .date-separator-text::before,
+        .date-separator-text::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 30%;
+            height: 1px;
+            background: #34495e;
+        }
+
+        .date-separator-text::before {
+            left: 0;
+        }
+
+        .date-separator-text::after {
+            right: 0;
+        }
+
+        /* Adjust conversation list spacing */
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+            transition: opacity 0.3s ease;
         }
 
         .conversation-content {
@@ -676,7 +755,7 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .sidebar {
-                width: 250px;
+                width: 220px;
             }
             
             .sidebar.collapsed {
@@ -707,6 +786,143 @@
             .conversations-list {
                 max-height: 150px;
             }
+        }
+
+        /* Profile Section Styles */
+        .profile-section {
+            margin-top: auto;
+            padding: 10px 14px;
+            border-top: 1px solid #34495e;
+            position: relative;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .profile-info:hover {
+            background: #34495e;
+        }
+
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            background: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .profile-details {
+            flex: 1;
+            min-width: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .profile-email {
+            font-size: 14px;
+            color: white;
+            font-weight: 500;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-status {
+            font-size: 12px;
+            color: #bdc3c7;
+            margin: 0;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+            margin-bottom: 8px;
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
+
+        .profile-dropdown-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .profile-dropdown-email {
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .profile-dropdown-status {
+            font-size: 12px;
+            color: #6c757d;
+            margin: 4px 0 0 0;
+        }
+
+        .profile-dropdown-item {
+            padding: 12px 16px;
+            color: #e74c3c;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .profile-dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .profile-dropdown-item i {
+            font-size: 16px;
+        }
+
+        /* Collapsed state styles */
+        .sidebar.collapsed .profile-details {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar.collapsed .profile-section {
+            padding: 15px 10px;
+        }
+
+        .sidebar.collapsed .profile-info {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .profile-dropdown {
+            left: 70px;
+            right: auto;
+            width: 250px;
         }
 
         /* Scrollbar Styling */
@@ -768,15 +984,46 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2>AI Chat</h2>
-                <div class="user-info" id="userInfo">Not logged in</div>
-                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">‹</button>
+                <div class="logo-container">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AI Chat Logo" class="logo-image" id="logoImage" onerror="this.style.display='none'; document.getElementById('logoText').style.display='block';">
+                    <h2 class="logo-text" id="logoText" style="display: none;">AI Chat</h2>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12h18M3 6h18M3 18h18"/>
+                    </svg>
+                </button>
             </div>
             
             <button class="new-chat-btn" id="newChatBtn">+ New Chat</button>
             
             <div class="conversations-list" id="conversationsList">
                 <!-- Conversations will be loaded here -->
+            </div>
+            
+            <!-- Profile Section -->
+            <div class="profile-section">
+                <div class="profile-info" id="profileInfo">
+                    <div class="profile-avatar" id="profileAvatar">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div class="profile-details">
+                        <p class="profile-email" id="profileEmail">Not logged in</p>
+                        <p class="profile-status">Online</p>
+                    </div>
+                </div>
+                
+                <!-- Profile Dropdown -->
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="profile-dropdown-header">
+                        <p class="profile-dropdown-email" id="dropdownEmail">Not logged in</p>
+                        <p class="profile-dropdown-status">Online</p>
+                    </div>
+                    <button class="profile-dropdown-item" id="profileLogoutBtn">
+                        <i class="bi bi-box-arrow-right"></i>
+                        Log out
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -787,7 +1034,6 @@
             <div class="header-controls">
                 <div class="mcp-status" id="mcpStatus">MCP: Disconnected</div>
                 <button class="mcp-connect-btn" id="mcpConnectBtn">Connect MCP</button>
-                <button class="logout-btn" id="logoutBtn">Logout</button>
             </div>
         </div>
 
@@ -830,14 +1076,12 @@
                 this.emailInput = document.getElementById('email');
                 this.loginBtn = document.getElementById('loginBtn');
                 
-                this.userInfo = document.getElementById('userInfo');
                 this.newChatBtn = document.getElementById('newChatBtn');
                 this.conversationsList = document.getElementById('conversationsList');
                 this.sidebarToggle = document.getElementById('sidebarToggle');
                 this.sidebar = document.querySelector('.sidebar');
                 
                 this.chatTitle = document.getElementById('chatTitle');
-                this.logoutBtn = document.getElementById('logoutBtn');
                 this.chatMessages = document.getElementById('chatMessages');
                 this.chatForm = document.getElementById('chatForm');
                 this.messageInput = document.getElementById('messageInput');
@@ -851,11 +1095,18 @@
                 this.connectMcpBtn = document.getElementById('connectMcpBtn');
                 this.cancelMcpBtn = document.getElementById('cancelMcpBtn');
                 this.closeMcpModal = document.getElementById('closeMcpModal');
+                
+                // Profile elements
+                this.profileInfo = document.getElementById('profileInfo');
+                this.profileAvatar = document.getElementById('profileAvatar');
+                this.profileEmail = document.getElementById('profileEmail');
+                this.profileDropdown = document.getElementById('profileDropdown');
+                this.dropdownEmail = document.getElementById('dropdownEmail');
+                this.profileLogoutBtn = document.getElementById('profileLogoutBtn');
             }
 
             attachEventListeners() {
                 this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
-                this.logoutBtn.addEventListener('click', () => this.handleLogout());
                 this.newChatBtn.addEventListener('click', () => this.createNewConversation());
                 this.chatForm.addEventListener('submit', (e) => this.handleSendMessage(e));
                 this.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
@@ -879,11 +1130,21 @@
                     this.messageInput.style.height = this.messageInput.scrollHeight + 'px';
                 });
                 
+                // Profile event listeners
+                this.profileInfo.addEventListener('click', (e) => this.toggleProfileDropdown(e));
+                this.profileLogoutBtn.addEventListener('click', () => this.handleLogout());
+                
                 // Close dropdowns when clicking outside
-                document.addEventListener('click', () => {
+                document.addEventListener('click', (e) => {
+                    // Close conversation dropdowns
                     document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
                         menu.classList.remove('show');
                     });
+                    
+                    // Close profile dropdown if clicking outside
+                    if (!this.profileInfo.contains(e.target) && !this.profileDropdown.contains(e.target)) {
+                        this.profileDropdown.classList.remove('show');
+                    }
                 });
             }
 
@@ -1005,47 +1266,59 @@
                     return;
                 }
 
-                this.conversations.forEach(conv => {
-                    const convElement = document.createElement('div');
-                    convElement.className = 'conversation-item';
-                    convElement.dataset.conversationId = conv.id;
+                // Group conversations by date
+                const groupedConversations = this.groupConversationsByDate(this.conversations);
+                
+                // Render each date group
+                Object.keys(groupedConversations).forEach(dateKey => {
+                    // Add date separator
+                    const dateElement = document.createElement('div');
+                    dateElement.className = 'date-separator';
+                    dateElement.innerHTML = `<p class="date-separator-text">${this.formatDateSeparator(dateKey)}</p>`;
+                    this.conversationsList.appendChild(dateElement);
                     
-                    const date = new Date(conv.updated_at).toLocaleDateString();
-                    
-                    convElement.innerHTML = `
-                        <div class="conversation-content">
-                            <div class="conversation-title">${conv.title}</div>
-                            <div class="conversation-meta">${date}</div>
-                        </div>
-                        <div class="conversation-menu">
-                            <button class="three-dots" type="button">⋯</button>
-                            <div class="dropdown-menu">
-                                <button class="dropdown-item" onclick="chatApp.deleteConversation('${conv.id}')">Delete</button>
+                    // Add conversations for this date
+                    groupedConversations[dateKey].forEach(conv => {
+                        const convElement = document.createElement('div');
+                        convElement.className = 'conversation-item';
+                        convElement.dataset.conversationId = conv.id;
+                        convElement.style.marginLeft = '20px';
+                        convElement.style.marginRight = '20px';
+                        
+                        convElement.innerHTML = `
+                            <div class="conversation-content">
+                                <div class="conversation-title">${conv.title}</div>
                             </div>
-                        </div>
-                    `;
-                    
-                    // Add click event to conversation content only
-                    const conversationContent = convElement.querySelector('.conversation-content');
-                    conversationContent.addEventListener('click', () => this.loadConversation(conv.id));
-                    
-                    // Add three dots menu functionality
-                    const threeDots = convElement.querySelector('.three-dots');
-                    const dropdownMenu = convElement.querySelector('.dropdown-menu');
-                    
-                    threeDots.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        // Close other open dropdowns
-                        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                            if (menu !== dropdownMenu) {
-                                menu.classList.remove('show');
-                            }
+                            <div class="conversation-menu">
+                                <button class="three-dots" type="button">⋯</button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item" onclick="chatApp.deleteConversation('${conv.id}')">Delete</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Add click event to conversation content only
+                        const conversationContent = convElement.querySelector('.conversation-content');
+                        conversationContent.addEventListener('click', () => this.loadConversation(conv.id));
+                        
+                        // Add three dots menu functionality
+                        const threeDots = convElement.querySelector('.three-dots');
+                        const dropdownMenu = convElement.querySelector('.dropdown-menu');
+                        
+                        threeDots.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            // Close other open dropdowns
+                            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                                if (menu !== dropdownMenu) {
+                                    menu.classList.remove('show');
+                                }
+                            });
+                            // Toggle current dropdown
+                            dropdownMenu.classList.toggle('show');
                         });
-                        // Toggle current dropdown
-                        dropdownMenu.classList.toggle('show');
+                        
+                        this.conversationsList.appendChild(convElement);
                     });
-                    
-                    this.conversationsList.appendChild(convElement);
                 });
             }
 
@@ -1421,7 +1694,9 @@
             showMainApp() {
                 this.loginScreen.style.display = 'none';
                 this.appContainer.style.display = 'flex';
-                this.userInfo.textContent = this.currentUser;
+                
+                // Update profile section
+                this.updateProfileSection();
                 
                 // Clear any previous chat state
                 this.clearChatInterface();
@@ -1641,6 +1916,70 @@
                         successElement.parentNode.removeChild(successElement);
                     }
                 }, 3000);
+            }
+            
+            // Profile section methods
+            updateProfileSection() {
+                if (this.currentUser) {
+                    this.profileEmail.textContent = this.currentUser;
+                    this.dropdownEmail.textContent = this.currentUser;
+                    
+                    // Set avatar initial (first letter of email)
+                    const initial = this.currentUser.charAt(0).toUpperCase();
+                    this.profileAvatar.textContent = initial;
+                } else {
+                    this.profileEmail.textContent = 'Not logged in';
+                    this.dropdownEmail.textContent = 'Not logged in';
+                    this.profileAvatar.innerHTML = '<i class="bi bi-person"></i>';
+                }
+            }
+            
+            toggleProfileDropdown(e) {
+                e.stopPropagation();
+                this.profileDropdown.classList.toggle('show');
+            }
+            
+            // Helper methods for date grouping
+            groupConversationsByDate(conversations) {
+                const grouped = {};
+                
+                conversations.forEach(conv => {
+                    const date = new Date(conv.updated_at);
+                    const dateKey = date.toDateString(); // e.g., "Mon Sep 07 2025"
+                    
+                    if (!grouped[dateKey]) {
+                        grouped[dateKey] = [];
+                    }
+                    grouped[dateKey].push(conv);
+                });
+                
+                return grouped;
+            }
+            
+            formatDateSeparator(dateString) {
+                const date = new Date(dateString);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                // Check if it's today
+                if (date.toDateString() === today.toDateString()) {
+                    return 'Today';
+                }
+                
+                // Check if it's yesterday
+                if (date.toDateString() === yesterday.toDateString()) {
+                    return 'Yesterday';
+                }
+                
+                // Check if it's within the last 7 days
+                const daysDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+                if (daysDiff <= 7) {
+                    return date.toLocaleDateString('en-US', { weekday: 'long' });
+                }
+                
+                // For older dates, show month and day
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             }
         }
 
