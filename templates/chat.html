@@ -131,7 +131,7 @@
         .new-chat-btn {
             margin: 20px;
             padding: 12px 20px;
-            background: #3498db;
+            background: #1e5fb3;
             color: white;
             border: none;
             border-radius: 8px;
@@ -142,7 +142,7 @@
         }
 
         .new-chat-btn:hover {
-            background: #2980b9;
+            background: #1e5fb3;
         }
 
         .conversations-list {
@@ -171,8 +171,8 @@
         }
 
         .conversation-item.active {
-            background: #3498db;
-            border-color: #2980b9;
+            background: #1e5fb3;
+            border-color: #1e5fb3;
         }
 
         .conversation-title {
@@ -304,7 +304,7 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e5fb3 0%, #764ba2 100%);
         }
 
         .login-form {
@@ -343,13 +343,13 @@
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #1e5fb3;
         }
 
         .btn {
             width: 100%;
             padding: 12px;
-            background: #667eea;
+            background: #1e5fb3;
             color: white;
             border: none;
             border-radius: 8px;
@@ -360,7 +360,7 @@
         }
 
         .btn:hover {
-            background: #5a6fd8;
+            background: #1e5fb3;
         }
 
         .btn:disabled {
@@ -425,7 +425,7 @@
 
         .mcp-connect-btn {
             padding: 6px 12px;
-            background: #3498db;
+            background: #1e5fb3;
             color: white;
             border: none;
             border-radius: 4px;
@@ -434,7 +434,7 @@
         }
 
         .mcp-connect-btn:hover {
-            background: #2980b9;
+            background: #1e5fb3;
         }
 
         .mcp-connect-btn:disabled {
@@ -573,13 +573,13 @@
         }
         
         .message.assistant .message-content .btn-outline-primary {
-            border-color: #0d6efd;
-            color: #0d6efd;
+            border-color: #1e5fb3;
+            color: #1e5fb3;
         }
         
         .message.assistant .message-content .btn-outline-primary:hover {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
+            background-color: #1e5fb3;
+            border-color: #1e5fb3;
             color: white;
         }
         
@@ -601,7 +601,7 @@
         }
 
         .message.user .message-content {
-            background: #667eea;
+            background: #1e5fb3;
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -674,49 +674,97 @@
         /* Chat Input */
         .chat-input-container {
             padding: 20px;
-            background: white;
-            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
         }
 
         .chat-input-form {
-            display: flex;
-            gap: 10px;
+            position: relative;
+            max-width: 100%;
         }
 
         .chat-input {
-            flex: 1;
-            padding: 10px 14px;
+            width: 100%;
+            padding: 14px 60px 14px 20px;
             border: 2px solid #e9ecef;
             border-radius: 24px;
             font-size: 13px;
             resize: none;
             max-height: 100px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .chat-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #1e5fb3;
+            box-shadow: 0 2px 12px rgba(30, 95, 179, 0.2);
+        }
+
+        .input-controls {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mic-btn {
+            width: 32px;
+            height: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: #6c757d;
+        }
+
+        .mic-btn:hover {
+            background: rgba(30, 95, 179, 0.1);
+            color: #1e5fb3;
+        }
+
+        .mic-btn svg {
+            width: 16px;
+            height: 16px;
         }
 
         .send-btn {
-            padding: 12px 20px;
-            background: #667eea;
+            width: 32px;
+            height: 32px;
+            background: #1e5fb3;
             color: white;
             border: none;
-            border-radius: 24px;
+            border-radius: 50%;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            transition: background 0.3s;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
         }
 
         .send-btn:hover {
-            background: #5a6fd8;
+            background: #1e5fb3;
+            transform: scale(1.05);
         }
 
         .send-btn:disabled {
             background: #bdc3c7;
             cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-btn svg {
+            width: 14px;
+            height: 14px;
         }
 
         /* Loading and Status */
@@ -813,7 +861,7 @@
         .profile-avatar {
             width: 32px;
             height: 32px;
-            background: #3498db;
+            background: #1e5fb3;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1050,7 +1098,22 @@
                         rows="1"
                         disabled
                     ></textarea>
-                    <button type="submit" class="send-btn" id="sendBtn" disabled>Send</button>
+                    <div class="input-controls">
+                        <button type="button" class="mic-btn" id="micBtn" title="Voice input">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="23"/>
+                                <line x1="8" y1="23" x2="16" y2="23"/>
+                            </svg>
+                        </button>
+                        <button type="submit" class="send-btn" id="sendBtn" disabled title="Send message">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+                            </svg>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -1086,6 +1149,7 @@
                 this.chatForm = document.getElementById('chatForm');
                 this.messageInput = document.getElementById('messageInput');
                 this.sendBtn = document.getElementById('sendBtn');
+                this.micBtn = document.getElementById('micBtn');
                 
                 // MCP elements
                 this.mcpStatus = document.getElementById('mcpStatus');
@@ -1110,6 +1174,7 @@
                 this.newChatBtn.addEventListener('click', () => this.createNewConversation());
                 this.chatForm.addEventListener('submit', (e) => this.handleSendMessage(e));
                 this.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+                this.micBtn.addEventListener('click', () => this.handleMicClick());
                 
                 // MCP event listeners
                 this.mcpConnectBtn.addEventListener('click', () => this.showMcpModal());
@@ -1446,7 +1511,7 @@
                 if (!content || !this.currentConversation) return;
 
                 this.sendBtn.disabled = true;
-                this.sendBtn.textContent = 'Sending...';
+                this.sendBtn.title = 'Sending...';
 
                 this.messageInput.value = '';
                 this.messageInput.style.height = 'auto';
@@ -1460,7 +1525,7 @@
                     }
                 } finally {
                     this.sendBtn.disabled = false;
-                    this.sendBtn.textContent = 'Send';
+                    this.sendBtn.title = 'Send message';
                 }
             }
 
@@ -1492,7 +1557,7 @@
                         if (done) {
                             // Ensure button is reset when stream ends
                             this.sendBtn.disabled = false;
-                            this.sendBtn.textContent = 'Send';
+                            this.sendBtn.title = 'Send message';
                             break;
                         }
 
@@ -1552,7 +1617,7 @@
                                             }
                                             // Reset send button
                                             this.sendBtn.disabled = false;
-                                            this.sendBtn.textContent = 'Send';
+                                            this.sendBtn.title = 'Send message';
                                             break;
                                             
                                         case 'error':
@@ -1562,7 +1627,7 @@
                                             }
                                             // Reset send button on error
                                             this.sendBtn.disabled = false;
-                                            this.sendBtn.textContent = 'Send';
+                                            this.sendBtn.title = 'Send message';
                                             break;
                                     }
                                 } catch (e) {
@@ -1581,7 +1646,7 @@
                     // Ensure send button is re-enabled in case of any errors
                     if (this.sendBtn.disabled) {
                         this.sendBtn.disabled = false;
-                        this.sendBtn.textContent = 'Send';
+                        this.sendBtn.title = 'Send message';
                     }
                 }
             }
@@ -1679,6 +1744,13 @@
                 this.messageInput.disabled = false;
                 this.sendBtn.disabled = false;
                 this.messageInput.focus();
+            }
+
+            handleMicClick() {
+                // Placeholder for voice input functionality
+                console.log('Microphone clicked - voice input feature to be implemented');
+                // Future enhancement: implement Web Speech API for voice input
+                alert('Voice input feature coming soon!');
             }
 
             scrollToBottom() {
