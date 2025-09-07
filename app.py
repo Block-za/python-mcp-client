@@ -365,9 +365,22 @@ def send_message(conversation_id):
         # Add user message
         user_message = add_message(conversation_id, 'user', message_content)
         
-        # If this is the first message, update conversation title
-        if len(conversation.messages) == 1:  # Only the message we just added
-            title = summarizer.generate_conversation_title(message_content)
+        # Update conversation title based on conversation progress
+        message_count = len(conversation.messages)
+        should_update_title = False
+        
+        if message_count == 1:  # First message - always update title
+            should_update_title = True
+        elif message_count == 3:  # After first exchange (user + assistant + user)
+            should_update_title = True
+        elif message_count % 10 == 1:  # Every 10 messages, refresh the title
+            should_update_title = True
+        
+        if should_update_title:
+            # Get all messages for context-aware title generation
+            all_messages = get_all_messages_for_conversation(conversation_id)
+            messages_dict = [msg.to_dict() for msg in all_messages]
+            title = summarizer.generate_conversation_title(messages=messages_dict)
             conversation.title = title
             db.session.commit()
         
@@ -439,9 +452,22 @@ def send_message_stream(conversation_id):
         # Add user message
         user_message = add_message(conversation_id, 'user', message_content)
         
-        # If this is the first message, update conversation title
-        if len(conversation.messages) == 1:  # Only the message we just added
-            title = summarizer.generate_conversation_title(message_content)
+        # Update conversation title based on conversation progress
+        message_count = len(conversation.messages)
+        should_update_title = False
+        
+        if message_count == 1:  # First message - always update title
+            should_update_title = True
+        elif message_count == 3:  # After first exchange (user + assistant + user)
+            should_update_title = True
+        elif message_count % 10 == 1:  # Every 10 messages, refresh the title
+            should_update_title = True
+        
+        if should_update_title:
+            # Get all messages for context-aware title generation
+            all_messages = get_all_messages_for_conversation(conversation_id)
+            messages_dict = [msg.to_dict() for msg in all_messages]
+            title = summarizer.generate_conversation_title(messages=messages_dict)
             conversation.title = title
             db.session.commit()
         
@@ -588,6 +614,41 @@ def delete_conversation_endpoint(conversation_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/conversations/<int:conversation_id>/regenerate-title', methods=['POST'])
+def regenerate_conversation_title(conversation_id):
+    """Regenerate the title for an existing conversation"""
+    email = session.get('email')
+    if not email:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    try:
+        # Verify conversation belongs to user
+        conversation = get_conversation_by_id(conversation_id, email)
+        if not conversation:
+            return jsonify({'error': 'Conversation not found'}), 404
+        
+        # Get all messages for context-aware title generation
+        all_messages = get_all_messages_for_conversation(conversation_id)
+        if not all_messages:
+            return jsonify({'error': 'No messages found in conversation'}), 400
+        
+        messages_dict = [msg.to_dict() for msg in all_messages]
+        new_title = summarizer.generate_conversation_title(messages=messages_dict)
+        
+        # Update the conversation title
+        conversation.title = new_title
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'new_title': new_title,
+            'conversation': conversation.to_dict()
+        })
+        
+    except Exception as e:
+        print(f"Error regenerating conversation title: {e}")
+        return jsonify({'error': 'Failed to regenerate title'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

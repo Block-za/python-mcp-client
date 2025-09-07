@@ -172,15 +172,127 @@ Summary:
         # Convert Message objects to dictionaries
         return [msg.to_dict() for msg in context_messages]
     
-    def generate_conversation_title(self, first_message: str) -> str:
+    def generate_conversation_title(self, messages: List[Dict[str, Any]] = None, first_message: str = None) -> str:
         """
-        Generate a title for a new conversation based on the first user message.
+        Generate a title for a conversation based on the messages or first message.
+        If messages are provided, creates a contextual title based on the conversation.
+        If only first_message is provided, creates a title based on that message.
         """
-        if not first_message:
+        # If we have multiple messages, use AI to generate a contextual title
+        if messages and len(messages) > 1:
+            return self._generate_ai_title(messages)
+        
+        # Fallback to first message or single message handling
+        message_text = first_message
+        if messages and len(messages) == 1:
+            message_text = messages[0].get('content', '')
+        
+        if not message_text:
+            return "New Conversation"
+        
+        # Try AI generation for single message too, but with simpler prompt
+        try:
+            return self._generate_ai_title_single_message(message_text)
+        except:
+            # Fallback to word-based title
+            return self._generate_fallback_title(message_text)
+    
+    def _generate_ai_title(self, messages: List[Dict[str, Any]]) -> str:
+        """Generate a contextual title using AI based on conversation messages."""
+        try:
+            # Take recent messages for context (max 10 messages)
+            recent_messages = messages[-10:] if len(messages) > 10 else messages
+            
+            # Format messages for the prompt
+            conversation_text = ""
+            for msg in recent_messages:
+                role = msg.get('role', 'unknown')
+                content = msg.get('content', '')
+                if role in ['user', 'assistant'] and content.strip():
+                    conversation_text += f"{role.title()}: {content[:200]}\n"
+            
+            prompt = f"""Based on this conversation, generate a concise 4-6 word title that captures the main topic or purpose. The title should be:
+- Short and descriptive
+- Professional and clear
+- Without quotes or special characters
+- Maximum 6 words
+
+Conversation:
+{conversation_text}
+
+Title:"""
+
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You generate short, descriptive titles for conversations. Always respond with just the title, nothing else."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=20,
+                temperature=0.3
+            )
+            
+            title = response.choices[0].message.content.strip()
+            
+            # Clean and validate the title
+            title = re.sub(r'["\']', '', title)  # Remove quotes
+            title = title.strip()
+            
+            # Ensure it's not too long
+            if len(title) > 50:
+                title = title[:47] + "..."
+            
+            return title if title else "Chat Conversation"
+            
+        except Exception as e:
+            print(f"Error generating AI title: {e}")
+            # Fallback to the first user message
+            user_messages = [msg for msg in messages if msg.get('role') == 'user']
+            if user_messages:
+                return self._generate_fallback_title(user_messages[0].get('content', ''))
+            return "Chat Conversation"
+    
+    def _generate_ai_title_single_message(self, message_text: str) -> str:
+        """Generate a title for a single message using AI."""
+        try:
+            prompt = f"""Create a short 4-6 word title for a conversation that starts with this message:
+
+"{message_text[:300]}"
+
+Generate a title that captures what the user is asking about or discussing. Be concise and descriptive.
+
+Title:"""
+
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You generate short, descriptive titles for conversations. Always respond with just the title, nothing else."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=15,
+                temperature=0.3
+            )
+            
+            title = response.choices[0].message.content.strip()
+            title = re.sub(r'["\']', '', title)  # Remove quotes
+            title = title.strip()
+            
+            if len(title) > 50:
+                title = title[:47] + "..."
+            
+            return title if title else self._generate_fallback_title(message_text)
+            
+        except Exception as e:
+            print(f"Error generating AI title for single message: {e}")
+            return self._generate_fallback_title(message_text)
+    
+    def _generate_fallback_title(self, message_text: str) -> str:
+        """Generate a fallback title based on the message text."""
+        if not message_text:
             return "New Conversation"
         
         # Clean the message
-        cleaned_message = re.sub(r'[^\w\s]', '', first_message)
+        cleaned_message = re.sub(r'[^\w\s]', '', message_text)
         words = cleaned_message.split()
         
         # Take first few words, limit to reasonable length

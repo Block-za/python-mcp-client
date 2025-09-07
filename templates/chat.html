@@ -180,6 +180,10 @@
             font-weight: 500;
             margin-bottom: 0;
             line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
 
         .conversation-meta {
@@ -238,6 +242,8 @@
         .conversation-content {
             flex: 1;
             cursor: pointer;
+            min-width: 0; /* Allow flexbox to shrink below content size */
+            overflow: hidden;
         }
 
         .conversation-menu {
@@ -1334,8 +1340,13 @@
                 // Group conversations by date
                 const groupedConversations = this.groupConversationsByDate(this.conversations);
                 
+                // Sort date groups by date (newest first)
+                const sortedDateKeys = Object.keys(groupedConversations).sort((a, b) => {
+                    return new Date(b) - new Date(a);
+                });
+                
                 // Render each date group
-                Object.keys(groupedConversations).forEach(dateKey => {
+                sortedDateKeys.forEach(dateKey => {
                     // Add date separator
                     const dateElement = document.createElement('div');
                     dateElement.className = 'date-separator';
@@ -1357,6 +1368,7 @@
                             <div class="conversation-menu">
                                 <button class="three-dots" type="button">⋯</button>
                                 <div class="dropdown-menu">
+                                    <button class="dropdown-item" onclick="chatApp.regenerateTitle('${conv.id}')">Regenerate Title</button>
                                     <button class="dropdown-item" onclick="chatApp.deleteConversation('${conv.id}')">Delete</button>
                                 </div>
                             </div>
@@ -1965,6 +1977,43 @@
                 }
             }
 
+            async regenerateTitle(conversationId) {
+                if (!confirm('Regenerate conversation title? This will create a new title based on the conversation content.')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/conversations/${conversationId}/regenerate-title`, {
+                        method: 'POST'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Update the conversation in our local array
+                        const conversation = this.conversations.find(conv => conv.id == conversationId);
+                        if (conversation) {
+                            conversation.title = data.new_title;
+                        }
+                        
+                        // If this is the current conversation, update the chat title
+                        if (this.currentConversation && this.currentConversation.id == conversationId) {
+                            this.currentConversation.title = data.new_title;
+                            this.chatTitle.textContent = data.new_title;
+                        }
+                        
+                        // Re-render conversations to show new title
+                        this.renderConversations();
+                        
+                        this.showSuccess('Conversation title updated successfully');
+                    } else {
+                        this.showError(data.error || 'Failed to regenerate title');
+                    }
+                } catch (error) {
+                    this.showError('Failed to regenerate title');
+                }
+            }
+
             showSuccess(message) {
                 // Remove existing success messages
                 document.querySelectorAll('.success').forEach(el => el.remove());
@@ -2023,6 +2072,13 @@
                         grouped[dateKey] = [];
                     }
                     grouped[dateKey].push(conv);
+                });
+                
+                // Sort conversations within each date group by updated_at descending (newest first)
+                Object.keys(grouped).forEach(dateKey => {
+                    grouped[dateKey].sort((a, b) => {
+                        return new Date(b.updated_at) - new Date(a.updated_at);
+                    });
                 });
                 
                 return grouped;
