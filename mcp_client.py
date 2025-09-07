@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 from typing import Optional, Dict, Any, List
 from contextlib import AsyncExitStack
 
@@ -152,7 +153,7 @@ For company listings, use this format:
             "content": query
         })
         
-        return await self._process_messages(messages)
+        return await self._process_messages(messages, update_history=True)
 
     async def process_query_with_context(self, context_messages: List[Dict[str, Any]]) -> str:
         """Process a query with provided context messages (for chat application)"""
@@ -171,7 +172,7 @@ For company listings, use this format:
         # Add context messages
         messages.extend(context_messages)
         
-        return await self._process_messages(messages)
+        return await self._process_messages(messages, update_history=False)
 
     async def process_query_with_context_stream(self, context_messages: List[Dict[str, Any]]):
         """Process a query with provided context messages and stream the response"""
@@ -194,7 +195,7 @@ For company listings, use this format:
         async for chunk in self._process_messages_stream(messages):
             yield chunk
 
-    async def _process_messages(self, messages: List[Dict[str, Any]], stream: bool = False) -> str:
+    async def _process_messages(self, messages: List[Dict[str, Any]], stream: bool = False, update_history: bool = False) -> str:
         """Internal method to process messages with OpenAI and tools"""
 
         # Prepare tools for OpenAI
@@ -222,42 +223,66 @@ For company listings, use this format:
             )
 
             response_message = response.choices[0].message
+            # Debug: log initial response tool_calls summary
+            try:
+                print("[MCPClient] First completion received. tool_calls:",
+                      [
+                          {
+                              'id': tc.id,
+                              'name': getattr(tc.function, 'name', None),
+                          } for tc in (response_message.tool_calls or [])
+                      ])
+            except Exception as _:
+                pass
             
-            # Only add to conversation history if this is a regular query (not context-based)
-            if len(messages) == len(self.conversation_history) + 2:  # system + user message
-                self.conversation_history.append(response_message)
-
             # Check if tool calls are needed
             if response_message.tool_calls:
-                for tool_call in response_message.tool_calls:
-                    tool_name = tool_call.function.name
-                    tool_args = json.loads(tool_call.function.arguments)
-
-                    # Execute tool call
-                    result = await self.session.call_tool(tool_name, tool_args)
-                    
-                    # Add tool result to conversation (only for regular queries)
-                    if len(messages) == len(self.conversation_history) + 2:
-                        self.conversation_history.append({
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "content": result.content[0].text if result.content else "No content returned"
-                        })
-
+                # Add assistant message with tool_calls to conversation history FIRST (only for regular queries)
+                if update_history:
+                    # Convert to dictionary format for conversation history
+                    assistant_msg = {
+                        "role": "assistant",
+                        "content": response_message.content,
+                        "tool_calls": [
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tc.function.name,
+                                    "arguments": tc.function.arguments
+                                }
+                            } for tc in response_message.tool_calls
+                        ] if response_message.tool_calls else None
+                    }
+                    self.conversation_history.append(assistant_msg)
+                
                 # Get final response from OpenAI
                 final_messages = messages.copy()
                 final_messages.append(response_message)
                 
-                # Add tool results
+                # Execute tool calls and add results
                 for tool_call in response_message.tool_calls:
                     tool_name = tool_call.function.name
+                    
+                    # Skip tool calls with empty function names
+                    if not tool_name:
+                        continue
+                        
                     tool_args = json.loads(tool_call.function.arguments)
                     result = await self.session.call_tool(tool_name, tool_args)
-                    final_messages.append({
+                    
+                    tool_result = {
                         "role": "tool",
-                        "tool_call_id": tool_call.id,
+                        "tool_call_id": tool_call.id if tool_call.id else f"call_{int(time.time() * 1000)}",
                         "content": result.content[0].text if result.content else "No content returned"
-                    })
+                    }
+                    
+                    # Add tool result to final messages
+                    final_messages.append(tool_result)
+                    
+                    # Add tool result to conversation history (only for regular queries)
+                    if update_history:
+                        self.conversation_history.append(tool_result)
                 
                 final_response = self.openai_client.chat.completions.create(
                     model="gpt-4o",
@@ -265,14 +290,32 @@ For company listings, use this format:
                     max_tokens=1000,
                     timeout=30  # 30 second timeout
                 )
+                try:
+                    print("[MCPClient] Second completion messages roles:", [m.get('role', 'obj') if isinstance(m, dict) else getattr(m, 'role', 'obj') for m in final_messages])
+                except Exception:
+                    pass
 
                 final_message = final_response.choices[0].message
                 
                 # Only add to conversation history if this is a regular query
-                if len(messages) == len(self.conversation_history) + 2:
-                    self.conversation_history.append(final_message)
+                if update_history:
+                    # Convert to dictionary format for conversation history
+                    final_assistant_msg = {
+                        "role": "assistant",
+                        "content": final_message.content
+                    }
+                    self.conversation_history.append(final_assistant_msg)
                     
                 return final_message.content
+            else:
+                # No tool calls - add assistant message to conversation history (only for regular queries)
+                if update_history:
+                    # Convert to dictionary format for conversation history
+                    assistant_msg = {
+                        "role": "assistant",
+                        "content": response_message.content
+                    }
+                    self.conversation_history.append(assistant_msg)
 
             return response_message.content
 
@@ -280,7 +323,7 @@ For company listings, use this format:
             error_msg = f"Error processing query: {str(e)}"
             print(error_msg)
             # Only clear conversation history on error for regular queries
-            if len(messages) == len(self.conversation_history) + 2:
+            if update_history:
                 self.conversation_history = []
             return error_msg
 
@@ -318,8 +361,14 @@ For company listings, use this format:
             full_response = ""
             tool_calls = []
             current_tool_call = None
+            current_tool_index = None
             
             for chunk in stream:
+                try:
+                    if chunk.choices[0].delta.tool_calls:
+                        print("[MCPClient][stream] delta.tool_calls frame:", chunk.choices[0].delta.tool_calls)
+                except Exception:
+                    pass
                 if chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
                     full_response += content
@@ -328,26 +377,50 @@ For company listings, use this format:
                 # Handle tool calls in streaming
                 if chunk.choices[0].delta.tool_calls:
                     for tool_call in chunk.choices[0].delta.tool_calls:
-                        if tool_call.index is not None:
-                            # New tool call
+                        idx = tool_call.index
+                        name_delta = tool_call.function.name if tool_call.function else None
+                        args_delta = tool_call.function.arguments if tool_call.function else None
+
+                        # Start a new tool call only if index changes or there is no active call
+                        if current_tool_call is None or (idx is not None and current_tool_index is None) or (idx is not None and idx != current_tool_index):
+                            # If we were building one, push it
                             if current_tool_call:
                                 tool_calls.append(current_tool_call)
+                            current_tool_index = idx
+                            tool_call_id = tool_call.id if tool_call.id else f"call_{len(tool_calls)}_{int(time.time() * 1000)}"
                             current_tool_call = {
-                                "id": tool_call.id,
+                                "id": tool_call_id,
                                 "type": "function",
                                 "function": {
-                                    "name": tool_call.function.name if tool_call.function.name else "",
-                                    "arguments": tool_call.function.arguments if tool_call.function.arguments else ""
+                                    "name": name_delta or "",
+                                    "arguments": args_delta or ""
                                 }
                             }
                         else:
-                            # Continuation of current tool call
-                            if current_tool_call and tool_call.function.arguments:
-                                current_tool_call["function"]["arguments"] += tool_call.function.arguments
+                            # Continuation of the same tool call
+                            if name_delta:
+                                current_tool_call["function"]["name"] = name_delta
+                            if args_delta:
+                                current_tool_call["function"]["arguments"] += args_delta
 
             # Add final tool call if any
             if current_tool_call:
                 tool_calls.append(current_tool_call)
+
+            # Deduplicate tool_calls by id (some providers repeat frames with the same index)
+            if tool_calls:
+                unique = {}
+                for tc in tool_calls:
+                    tc_id = tc["id"]
+                    if tc_id not in unique:
+                        unique[tc_id] = tc
+                    else:
+                        # Merge arguments if duplicated
+                        unique[tc_id]["function"]["arguments"] += tc["function"].get("arguments", "")
+                        # Prefer the non-empty name
+                        if not unique[tc_id]["function"].get("name") and tc["function"].get("name"):
+                            unique[tc_id]["function"]["name"] = tc["function"]["name"]
+                tool_calls = list(unique.values())
 
             # Process tool calls if any
             if tool_calls:
@@ -356,24 +429,78 @@ For company listings, use this format:
                 # Execute tool calls
                 tool_results = []
                 for tool_call in tool_calls:
-                    tool_name = tool_call["function"]["name"]
-                    tool_args = json.loads(tool_call["function"]["arguments"])
-                    
-                    result = await self.session.call_tool(tool_name, tool_args)
-                    tool_results.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call["id"],
-                        "content": result.content[0].text if result.content else "No content returned"
-                    })
+                    try:
+                        tool_name = tool_call["function"]["name"]
+                        tool_args_str = tool_call["function"]["arguments"]
+                        
+                        # Skip tool calls with empty function names
+                        if not tool_name:
+                            continue
+                        
+                        # Validate and parse tool arguments
+                        if not tool_args_str or tool_args_str.strip() == "":
+                            tool_args = {}
+                        else:
+                            tool_args = json.loads(tool_args_str)
+                        
+                        result = await self.session.call_tool(tool_name, tool_args)
+                        tool_results.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call["id"],
+                            "content": result.content[0].text if result.content else "No content returned"
+                        })
+                    except json.JSONDecodeError as e:
+                        error_msg = f"Error parsing tool arguments for {tool_call['function']['name']}: {str(e)}"
+                        tool_results.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call["id"],
+                            "content": error_msg
+                        })
+                    except Exception as e:
+                        error_msg = f"Error executing tool {tool_call['function']['name']}: {str(e)}"
+                        tool_results.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call["id"],
+                            "content": error_msg
+                        })
 
                 # Get final response with tool results
                 final_messages = messages.copy()
-                final_messages.append({
+                
+                # Format tool_calls properly for OpenAI API
+                formatted_tool_calls = []
+                for tool_call in tool_calls:
+                    # Ensure name exists
+                    if not tool_call["function"].get("name"):
+                        continue
+                    formatted_tool_calls.append({
+                        "id": tool_call["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tool_call["function"]["name"],
+                            "arguments": tool_call["function"].get("arguments", "{}") or "{}"
+                        }
+                    })
+                
+                # Per OpenAI Chat Completions spec, assistant messages that initiate tool calls
+                # should have an empty content and include tool_calls. The natural language
+                # content has already been streamed to the client in chunks.
+                assistant_message_with_tools = {
                     "role": "assistant",
-                    "content": full_response,
-                    "tool_calls": tool_calls
-                })
-                final_messages.extend(tool_results)
+                    "content": "",
+                    "tool_calls": formatted_tool_calls
+                }
+                
+                final_messages.append(assistant_message_with_tools)
+                # Only include tool results that reference an id from assistant_message_with_tools
+                valid_ids = {tc["id"] for tc in formatted_tool_calls}
+                for tr in tool_results:
+                    if tr["tool_call_id"] in valid_ids:
+                        final_messages.append(tr)
+                try:
+                    print("[MCPClient][stream] building final turn. assistant tool_calls:", [tc['function']['name'] for tc in formatted_tool_calls])
+                except Exception:
+                    pass
                 
                 final_stream = self.openai_client.chat.completions.create(
                     model="gpt-4o",

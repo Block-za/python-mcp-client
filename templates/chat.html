@@ -1574,13 +1574,19 @@
                         }
 
                         const chunk = decoder.decode(value);
+                        console.debug('[client][sse] raw chunk:', chunk);
                         const lines = chunk.split('\n');
 
                         for (const line of lines) {
                             if (line.startsWith('data: ')) {
                                 try {
-                                    const data = JSON.parse(line.slice(6));
-                                    console.log('Received streaming data:', data); // Debug log
+                                    const jsonStr = line.slice(6).trim();
+                                    if (!jsonStr) {
+                                        console.warn('Empty JSON data received');
+                                        continue;
+                                    }
+                                    const data = JSON.parse(jsonStr);
+                                    console.log('[client][sse] data:', data); // Debug log
                                     
                                     switch (data.type) {
                                         case 'user_message':
@@ -1618,15 +1624,11 @@
                                             break;
                                             
                                         case 'complete':
-                                            // Reload conversations to update counts with timeout
-                                            try {
-                                                const timeoutPromise = new Promise((_, reject) => 
-                                                    setTimeout(() => reject(new Error('Timeout')), 5000)
-                                                );
-                                                await Promise.race([this.loadConversations(), timeoutPromise]);
-                                            } catch (e) {
+                                            // Reload conversations to update counts (non-blocking)
+                                            this.loadConversations().catch(e => {
                                                 console.warn('Failed to reload conversations:', e);
-                                            }
+                                                // Don't show error to user for conversation reload failures
+                                            });
                                             // Reset send button
                                             this.sendBtn.disabled = false;
                                             this.sendBtn.title = 'Send message';

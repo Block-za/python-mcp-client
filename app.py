@@ -141,7 +141,10 @@ def process_query_stream():
                     while True:
                         try:
                             chunk = loop.run_until_complete(async_gen.__anext__())
-                            yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
+                            # Ensure chunk is a string and not None
+                            if chunk is not None:
+                                chunk_str = str(chunk)
+                                yield f"data: {json.dumps({'type': 'content', 'content': chunk_str})}\n\n"
                         except StopAsyncIteration:
                             break
                 except Exception as e:
@@ -496,6 +499,7 @@ def send_message_stream(conversation_id):
                 return
             
             try:
+                print('[API][stream] Starting streaming handler for conversation', conversation_id)
                 # Send user message first
                 with app.app_context():
                     yield f"data: {json.dumps({'type': 'user_message', 'message': user_message.to_dict()})}\n\n"
@@ -509,10 +513,15 @@ def send_message_stream(conversation_id):
                 
                 # Create the streaming coroutine
                 async def stream_response():
-                    nonlocal assistant_content
                     try:
                         async for chunk in mcp_client.process_query_with_context_stream(mcp_messages):
-                            assistant_content += chunk
+                            # Yield chunks directly; aggregation happens in the outer loop
+                            # Debug log server-side to trace content
+                            try:
+                                sys.stdout.write('[API][stream] chunk len=' + str(len(str(chunk))) + '\n')
+                                sys.stdout.flush()
+                            except Exception:
+                                pass
                             yield chunk
                     except Exception as e:
                         yield f"Error in MCP client streaming: {str(e)}"
@@ -524,7 +533,12 @@ def send_message_stream(conversation_id):
                     while True:
                         try:
                             chunk = loop.run_until_complete(async_gen.__anext__())
-                            yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
+                            # Ensure chunk is a string and not None
+                            if chunk is not None:
+                                chunk_str = str(chunk)
+                                # Append to assistant_content here only once
+                                assistant_content += chunk_str
+                                yield f"data: {json.dumps({'type': 'content', 'content': chunk_str})}\n\n"
                         except StopAsyncIteration:
                             break
                         except GeneratorExit:
