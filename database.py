@@ -105,11 +105,16 @@ def init_database(app):
     # Create tables if they don't exist
     with app.app_context():
         try:
+            # Test connection first with a simple query
+            with db.engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
             db.create_all()
-            print("Database tables created successfully")
+            print("✅ Database tables created successfully")
         except Exception as e:
-            print(f"Error creating database tables: {e}")
-            raise
+            print(f"❌ Database connection failed: {e}")
+            print("⚠️  App will start without database (limited functionality)")
+            # Don't raise - let the app start anyway
+            # Users will see connection errors when trying to save conversations
 
 def get_conversations_by_email(email, limit=50):
     """Get all conversations for a user by email"""
