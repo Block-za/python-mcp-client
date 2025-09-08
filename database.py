@@ -62,8 +62,27 @@ class Message(db.Model):
 
 def init_database(app):
     """Initialize database with Flask app"""
-    # Database configuration
+    # Database configuration with better debugging
     database_url = os.getenv('DATABASE_URL')
+    
+    # Debug environment variables
+    print("🔍 Database Configuration Debug:")
+    print(f"DATABASE_URL found: {'✅' if database_url else '❌'}")
+    if database_url:
+        print(f"DATABASE_URL: {database_url[:50]}...")
+    else:
+        print("❌ DATABASE_URL not found in environment!")
+        print("Available environment variables:")
+        for key in sorted(os.environ.keys()):
+            if any(term in key.upper() for term in ['DATABASE', 'DB_', 'SUPABASE', 'POSTGRES']):
+                value = os.environ[key]
+                # Mask passwords
+                if 'PASSWORD' in key.upper() or 'SECRET' in key.upper():
+                    value = '*' * len(value)
+                elif len(value) > 50:
+                    value = value[:50] + '...'
+                print(f"  {key}: {value}")
+    
     if not database_url:
         # Fallback to local PostgreSQL
         db_host = os.getenv('DB_HOST', 'localhost')
@@ -73,6 +92,9 @@ def init_database(app):
         db_password = os.getenv('DB_PASSWORD', 'password')
         
         database_url = f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
+        print(f"⚠️ Using fallback database: {database_url}")
+    else:
+        print(f"✅ Using configured database: {database_url[:50]}...")
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
