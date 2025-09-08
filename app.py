@@ -4,7 +4,8 @@ import os
 import threading
 from flask import Flask, render_template, request, jsonify, session, Response
 from flask_cors import CORS
-from mcp_client import MCPClient
+# from mcp_client import MCPClient  # Not needed for production
+from mcp_http_client import HTTPMCPClient
 from database import init_database, db, get_conversations_by_email, create_conversation, get_conversation_by_id, add_message, get_messages_for_context, get_all_messages_for_conversation, should_summarize_conversation, create_conversation_summary, delete_conversation
 from summarizer import ConversationSummarizer
 
@@ -21,6 +22,10 @@ event_loop = None
 loop_lock = threading.Lock()
 summarizer = ConversationSummarizer()
 
+# Check if we're in production mode
+IS_PRODUCTION = os.getenv('FLASK_ENV') == 'production'
+MCP_SERVER_URL = os.getenv('MCP_SERVER_URL')
+
 def get_or_create_loop():
     """Get the current event loop or create a new one"""
     global event_loop
@@ -29,6 +34,41 @@ def get_or_create_loop():
             event_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(event_loop)
         return event_loop
+
+async def auto_connect_mcp_server():
+    """Auto-connect to MCP server on startup"""
+    global mcp_client
+    
+    try:
+        if MCP_SERVER_URL:
+            # Use HTTP client for both production and testing
+            mcp_client = HTTPMCPClient()
+            success = await mcp_client.connect_to_server()
+            if success:
+                print(f"✅ Auto-connected to MCP server at {MCP_SERVER_URL}")
+                return True
+            else:
+                print(f"❌ Failed to auto-connect to MCP server at {MCP_SERVER_URL}")
+                return False
+        else:
+            print("⚠️ No MCP server URL configured for auto-connection")
+            return False
+    except Exception as e:
+        print(f"❌ Auto-connection error: {e}")
+        return False
+
+# Auto-connect on startup
+def initialize_mcp_connection():
+    """Initialize MCP connection on app startup"""
+    if MCP_SERVER_URL:
+        loop = get_or_create_loop()
+        try:
+            loop.run_until_complete(auto_connect_mcp_server())
+        except Exception as e:
+            print(f"Failed to initialize MCP connection: {e}")
+
+# Initialize on import
+initialize_mcp_connection()
 
 @app.route('/')
 def index():
@@ -665,4 +705,4 @@ def regenerate_conversation_title(conversation_id):
         return jsonify({'error': 'Failed to regenerate title'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
