@@ -75,11 +75,23 @@ For company listings, use this format:
 <div class='row'>
   <div class='col-12 col-sm-6 col-md-4 pb-4'>
     <div class='card h-100 shadow-sm border-0'>
-      <img src='BANNER_IMAGE_URL' class='card-img-top' alt='Company Banner'>
+      <div class='card-img-top' style='height: 100px; background: linear-gradient(135deg, #1e5fb3 0%, #764ba2 100%); position: relative; overflow: hidden;'>
+        <img src='BANNER_IMAGE_URL' style='width: 100%; height: 100%; object-fit: cover;' alt='Company Banner' onerror='this.style.display="none"'>
+        <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white;'>
+          <img src='LOGO_URL' style='width: 40px; height: 40px; border-radius: 6px; margin-bottom: 5px;' alt='Company Logo' onerror='this.style.display="none"'>
+          <div style='font-weight: bold; font-size: 16px;'>COMPANY_NAME</div>
+        </div>
+      </div>
       <div class='card-body'>
-        <h5 class='card-title mb-1'>Company Name</h5>
-        <p class='text-muted small mb-2'>Short company description...</p>
-        <a href='[DirectoryLink]' target='_blank' class='btn btn-outline-secondary btn-sm mt-2'>View Directory</a>
+        <div class='d-flex align-items-center mb-2'>
+          <img src='LOGO_URL' class='me-3' style='width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f8f9fa; border: 1px solid #e9ecef;' alt='Company Logo' onerror='this.style.display="none"'>
+          <h5 class='card-title mb-0'>Company Name</h5>
+        </div>
+        <p class='text-muted small mb-3'>Short company description...</p>
+        <div class='d-flex gap-2'>
+          <a href='https://blockza.io/directory/COMPANY_SLUG' target='_blank' class='btn btn-primary btn-sm flex-fill'>View Directory</a>
+          <a href='WEBSITE_URL' target='_blank' class='btn btn-outline-primary btn-sm flex-fill'>Visit Website</a>
+        </div>
       </div>
     </div>
   </div>
