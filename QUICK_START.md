@@ -34,11 +34,20 @@ Open your browser and go to: **http://localhost:5000**
 
 ## 💬 Try These Example Queries
 
+**Companies:**
 - "Search for crypto companies"
-- "Show me upcoming events"
 - "Find companies in the AI category"
 - "Get directory statistics"
+
+**Events:**
+- "Show me upcoming events"
 - "Show me events in New York"
+- "Find blockchain conferences"
+
+**Podcasts:**
+- "Show me featured podcasts"
+- "Find podcasts about blockchain"
+- "Get podcast statistics"
 
 ## 🔧 Troubleshooting
 
